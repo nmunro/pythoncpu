@@ -18,7 +18,7 @@ class Instruction:
         return hex(self)
 
     def __str__(self):
-        return self.name
+        return self.name.lower()
 
     def __repr__(self):
         return f"<Instruction{str(self)}: {hex(self)}>"
