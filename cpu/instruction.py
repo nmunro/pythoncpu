@@ -24,9 +24,9 @@ class Instruction:
         return f"<Instruction{str(self)}: {hex(self)}>"
 
 
-class InstructionMove(Instruction):
+class InstructionMoveByte(Instruction):
     def __init__(self):
-        super().__init__("Move", 0)
+        super().__init__("Move.b", 0)
 
     def __call__(self, *args):
         self.src = args[0]
@@ -58,7 +58,7 @@ class InstructionSet:
         print("Loading instruction set...")
 
         self.instructions = {
-            "move": InstructionMove(),
+            "move.b": InstructionMoveByte(),
             "jmp": InstructionJmp(),
             "rtn": InstructionRtn(),
             "halt": InstructionHalt(),

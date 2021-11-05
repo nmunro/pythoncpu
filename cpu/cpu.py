@@ -44,15 +44,15 @@ class CPU:
         print("Booting...")
 
         with Path(self.program_name).open() as f:
-            self.program = [line.strip() for line in f.readlines() if not line.strip() == ""]
+            for num, line in enumerate([line.strip() for line in f.readlines() if not line.strip() == ""]):
+                # Parse program for functions
+                label = line.split(" ", 1)
+                print(label)
 
-        for num, line in enumerate(self.program):
-            # Parse program for functions
-            label = line.split(" ", 1)
+                if label[0].endswith(":"):
+                    self.functions[label[0][:-1]] = num
 
-            if label[0].endswith(":"):
-                self.functions[label[0][:-1]] = num
-
+        print(self.functions)
         # Find the "start:" function and set the program counter to that!
         self.program_counter = self.functions["start"]
         self.load_program(self.program)
@@ -100,7 +100,7 @@ class CPU:
                 return self.instruction_set[instruction], [""]
 
     def execute_instruction(self, instruction, args):
-        if instruction.name == "move":
+        if instruction.name == "move.b":
             instruction(*args)
 
             if instruction.dest.startswith("0x"):
