@@ -36,22 +36,23 @@ class CPU:
         self.functions = {}
         self.instruction_set = InstructionSet()
 
+    def load_program(self, instruction):
+        self.program.append(instruction)
+
     def boot(self, program_name):
         self.program_name = program_name
         print("Booting...")
 
         with Path(self.program_name).open() as f:
-            self.program = [line.strip() for line in f.readlines()]
+            for num, line in enumerate([line.strip() for line in f.readlines() if not line.strip() == ""]):
+                instruction = line.split(" ", 1)
 
-        for num, line in enumerate(self.program):
-            # Parse program for functions
-            label = line.split(" ", 1)
+                if instruction[0].endswith(":"): # If this line is a function
+                    self.functions[instruction[0][:-1]] = num
+                    self.load_program(instruction[1])
 
-            if label[0].endswith(":"):
-                self.functions[label[0][:-1]] = num
-
-        # Find the "start:" function and set the program counter to that!
-        self.program_counter = self.functions["start"]
+                else:
+                    self.load_program(" ".join(instruction))
 
     def increment_program_counter(self):
         self.program_counter += 1
@@ -61,6 +62,9 @@ class CPU:
 
     def run(self):
         print(f"\nBegin execution of: {self.program_name}\n")
+                
+        # Find the "start:" function and set the program counter to that!
+        self.program_counter = self.functions["start"]
 
         while self.program and not self.stop:
             try:
@@ -86,9 +90,6 @@ class CPU:
     def fetch_instruction(self, instruction):
         # remove label, if present
         match instruction.split(" "):
-            case[function, instruction, args]:
-                return self.instruction_set[instruction], args.split(",")
-
             case[instruction, args]:
                 return self.instruction_set[instruction], args.split(",")
 
@@ -96,7 +97,7 @@ class CPU:
                 return self.instruction_set[instruction], [""]
 
     def execute_instruction(self, instruction, args):
-        if instruction.name == "move":
+        if str(instruction) == "move.b":
             instruction(*args)
 
             if instruction.dest.startswith("0x"):
