@@ -1,35 +1,42 @@
 class Instruction:
-    def __init__(self, name):
+    def __init__(self, name, code):
         self.name = name
+        self.code = code
         self.src = None
         self.dest = None
 
     def __call__(self, *args):
         return self
 
+    def __index__(self):
+        return int(self)
+
+    def __int__(self):
+        return self.code
+
+    def __hex__(self):
+        return hex(self)
+
     def __str__(self):
         return self.name
 
     def __repr__(self):
-        return f"<Instruction: {str(self)}>"
+        return f"<Instruction{str(self)}: {hex(self)}>"
 
 
 class InstructionMove(Instruction):
     def __init__(self):
-        super().__init__("move")
+        super().__init__("Move", 0)
 
     def __call__(self, *args):
         self.src = args[0]
         self.dest = args[1]
         return self
 
-    def __str__(self):
-        return f"{self.name} src: {self.src} dest: {self.dest}"
-
 
 class InstructionJmp(Instruction):
     def __init__(self):
-        super().__init__("jmp")
+        super().__init__("Jmp", 1)
 
     def __call__(self, *args):
         self.src = args[0]
@@ -38,12 +45,12 @@ class InstructionJmp(Instruction):
 
 class InstructionRtn(Instruction):
     def __init__(self):
-        super().__init__("rtn")
+        super().__init__("Rtn", 2)
 
 
 class InstructionHalt(Instruction):
     def __init__(self):
-        super().__init__("halt")
+        super().__init__("Halt", 3)
 
 
 class InstructionSet:

@@ -36,12 +36,15 @@ class CPU:
         self.functions = {}
         self.instruction_set = InstructionSet()
 
+    def load_program(self, program):
+        print(program)
+
     def boot(self, program_name):
         self.program_name = program_name
         print("Booting...")
 
         with Path(self.program_name).open() as f:
-            self.program = [line.strip() for line in f.readlines()]
+            self.program = [line.strip() for line in f.readlines() if not line.strip() == ""]
 
         for num, line in enumerate(self.program):
             # Parse program for functions
@@ -52,6 +55,7 @@ class CPU:
 
         # Find the "start:" function and set the program counter to that!
         self.program_counter = self.functions["start"]
+        self.load_program(self.program)
 
     def increment_program_counter(self):
         self.program_counter += 1
