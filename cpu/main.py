@@ -9,7 +9,7 @@ from vm import VM
 def main(load):
     registers = 8
     clock = Clock(4, "hz")
-    memory = 1
+    memory = 16
 
     vm = VM(registers, clock, memory)
     vm.boot(load)
