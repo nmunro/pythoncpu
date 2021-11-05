@@ -37,11 +37,12 @@ class CPU:
         self.instruction_set = InstructionSet()
 
     def load_program(self, instruction):
+        print(instruction)
         self.program.append(instruction)
 
     def boot(self, program_name):
+        print(f"Loading program {program_name} into lower memory...")
         self.program_name = program_name
-        print("Booting...")
 
         with Path(self.program_name).open() as f:
             for num, line in enumerate([line.strip() for line in f.readlines() if not line.strip() == ""]):
@@ -54,6 +55,9 @@ class CPU:
                 else:
                     self.load_program(" ".join(instruction))
 
+        print("Done!")
+        print("Booting...")
+
     def increment_program_counter(self):
         self.program_counter += 1
 
@@ -61,8 +65,6 @@ class CPU:
         self.program_counter = location
 
     def run(self):
-        print(f"\nBegin execution of: {self.program_name}\n")
-                
         # Find the "start:" function and set the program counter to that!
         self.program_counter = self.functions["start"]
 
@@ -88,7 +90,6 @@ class CPU:
             self.vram.write(hex(int(location)), int(value[2:]))
 
     def fetch_instruction(self, instruction):
-        # remove label, if present
         match instruction.split(" "):
             case[instruction, args]:
                 return self.instruction_set[instruction], args.split(",")
