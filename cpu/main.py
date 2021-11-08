@@ -12,6 +12,7 @@ def main(load):
     memory = 16
 
     vm = VM(registers, clock, memory)
+    print(vm)
     vm.boot(load)
     vm.run()
 

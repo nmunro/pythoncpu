@@ -26,14 +26,29 @@ class VRAM:
         self.cells = [[Cell(offset, address) for address in range(self.BASE_SIZE)] for offset in range(self.size)]
 
     def write(self, cell, data):
+        if type(cell) == int:
+            cell = hex(cell)
+
         offset = math.trunc(int(cell, self.BASE_SIZE) / self.BASE_SIZE)
         address = int(cell, self.BASE_SIZE) % self.BASE_SIZE
+        self.write_byte(offset, address, data)
+
+    def write_byte(self, offset, address, data):
         self.cells[offset][address].value = data
 
+    def write_bytes(self, offset, address, data):
+        print(data)
+
     def read(self, cell):
+        if type(cell) == int:
+            cell = hex(cell)
+
         offset = math.trunc(int(cell, self.BASE_SIZE) / self.BASE_SIZE)
         address = int(cell, self.BASE_SIZE) % self.BASE_SIZE
-        return hex(self.cells[offset][address].value)
+        return self.read_byte(offset, address)
+
+    def read_byte(self, offset, address):
+        return self.cells[offset][address].value
 
     def show(self):
         table = PrettyTable()

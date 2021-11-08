@@ -1,12 +1,11 @@
 class Instruction:
     def __init__(self, name, code):
-        self.name = name
+        self.name = name.lower()
         self.code = code
-        self.src = None
-        self.dest = None
+        self.operands = 1
 
-    def __call__(self, *args):
-        return self
+    def __len__(self):
+        return self.operands
 
     def __index__(self):
         return int(self)
@@ -17,54 +16,58 @@ class Instruction:
     def __hex__(self):
         return hex(self)
 
+    def __eq__(self, other):
+        if not type(other) == str:
+            raise TypeError("Must be a string")
+
+        return self.name == other
+
     def __str__(self):
-        return self.name.lower()
+        return f"{str(hex(self.code))[2:].zfill(2)}"
 
     def __repr__(self):
-        return f"<Instruction{str(self)}: {hex(self)}>"
+        return f"<Instruction (self.name): {hex(self)}>"
 
 
 class InstructionMoveByte(Instruction):
     def __init__(self):
-        super().__init__("Move.b", 0)
+        super().__init__("move.b", 1)
+        self.src = ""
+        self.dest = ""
+        self.operands = 3
 
-    def __call__(self, *args):
-        self.src = args[0]
-        self.dest = args[1]
-        return self
+    def __str__(self):
+        return f"{str(hex(self.code))[2:].zfill(2)}{self.src.zfill(2)}{self.dest.zfill(2)}"
 
 
 class InstructionJmp(Instruction):
     def __init__(self):
-        super().__init__("Jmp", 1)
-
-    def __call__(self, *args):
-        self.src = args[0]
-        return self
+        super().__init__("jmp", 2)
+        self.operands = 2
 
 
 class InstructionRtn(Instruction):
     def __init__(self):
-        super().__init__("Rtn", 2)
+        super().__init__("rtn", 3)
 
 
 class InstructionHalt(Instruction):
     def __init__(self):
-        super().__init__("Halt", 3)
+        super().__init__("halt", 4)
 
+    def __str__(self):
+        return f"{str(hex(self.code))[2:].zfill(2)}"
 
 class InstructionSet:
     def __init__(self):
-        print("Loading instruction set...")
-
         self.instructions = {
             "move.b": InstructionMoveByte(),
+            "01": InstructionMoveByte(),
             "jmp": InstructionJmp(),
             "rtn": InstructionRtn(),
             "halt": InstructionHalt(),
+            "04": InstructionHalt(),
         }
-
-        print(f"Loaded {len(self)} instructions!")
 
     def __len__(self):
         return len(self.instructions)
