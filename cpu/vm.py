@@ -8,11 +8,11 @@ class VM:
         self.cpu = CPU(registers, clock, self.vram)
 
     def boot(self, program):
-        print(self)
         self.cpu.boot(program)
 
     def run(self):
-        self.cpu.run()
+        while not self.cpu.stop:
+            self.cpu.run()
 
     def halt(self):
         self.cpu.halt()

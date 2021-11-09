@@ -30,29 +30,70 @@ class CPU:
         self.n = 0  # negative flag, if the result of some operation was a negative number
         self.v = 0  # overflow flag, when a value to0 large to store in a register was attempted
         self.c = 0  # carry flag, when a value is too large to store in a register the "carry" can be flagged
-        self.program_name = ""
         self.program = []
         self.stack = Stack()
         self.functions = {}
         self.instruction_set = InstructionSet()
 
-    def load_program(self, instruction):
-        self.program.append(instruction)
+    def boot(self, program_name: str) -> None:
+        print(f"Loading program {program_name} into lower memory...")
 
-    def boot(self, program_name):
-        self.program_name = program_name
-        print("Booting...")
+        functions = []
 
-        with Path(self.program_name).open() as f:
-            for num, line in enumerate([line.strip() for line in f.readlines() if not line.strip() == ""]):
+        with Path(program_name).open() as f:
+            byte_sequence = []
+
+            for num, line in enumerate([line.strip() for line in f.readlines() if not line.strip() == "" and not line.strip().startswith(";")]):
+                # Remember to find comments elsewhere in a line (not the beginning) and grab everything before the ";" character, attempt to use that as an instruction
                 instruction = line.split(" ", 1)
+                parsed_instruction = None
+                args = []
 
-                if instruction[0].endswith(":"): # If this line is a function
-                    self.functions[instruction[0][:-1]] = num
-                    self.load_program(instruction[1])
+                # If this line defines a function
+                if instruction[0].endswith(":"):
+                    parsed_instruction, args = self.read_instruction(instruction[1])
+                    byte_sequence.append("##")
+                    functions.append(instruction[0][:-1])
 
                 else:
-                    self.load_program(" ".join(instruction))
+                    parsed_instruction, args = self.read_instruction(" ".join(instruction))
+
+                if parsed_instruction == "move.b":
+                    parsed_instruction.src = args[0][2:]
+                    parsed_instruction.dest = args[1]
+                    byte_sequence.append(str(parsed_instruction))
+
+                elif parsed_instruction == "halt":
+                    byte_sequence.append(str(parsed_instruction))
+
+                elif parsed_instruction == "jmp":
+                    #byte_sequence.append(str(parsed_instruction))
+                    #print(parsed_instruction)
+                    pass
+
+                elif parsed_instruction == "rtn":
+                    #byte_sequence.append(str(parsed_instruction))
+                    pass
+
+        byte_sequence = "".join(byte_sequence)
+
+        fn_offset = 0
+        fn_count = 0
+
+        for num, x in enumerate([x for x in range(0, len(byte_sequence), 2)]):
+            if byte_sequence[x:x+2] == "##":
+                self.functions[functions[fn_count]] = fn_offset
+                fn_count += 1
+
+            else:
+                fn_offset += 1
+
+        byte_sequence = byte_sequence.replace("##", "")
+
+        for num, x in enumerate([x for x in range(0, len(byte_sequence), 2)]):
+            self.vram.write(num, byte_sequence[x:x+2])
+
+        print("Done!")
 
     def increment_program_counter(self):
         self.program_counter += 1
@@ -61,34 +102,37 @@ class CPU:
         self.program_counter = location
 
     def run(self):
-        print(f"\nBegin execution of: {self.program_name}\n")
-                
         # Find the "start:" function and set the program counter to that!
         self.program_counter = self.functions["start"]
 
-        while self.program and not self.stop:
+        while not self.stop:
             try:
-                instruction, args = self.fetch_instruction(self.program[self.program_counter])
-                self.execute_instruction(instruction, args)
-                self.increment_program_counter()
+                # This will need to read the PC and load an instruction from memory not from self.program
+                instruction = self.fetch_instruction()
+                self.execute_instruction(instruction)
                 time.sleep(self.clock.tick)
 
-            except IndexError:
+            except IndexError as e:
+                print(e)
                 self.halt()
 
         else:
             self.halt()
 
-    def write_register(self, value, location):
-        if value.startswith("#$"):
-            self.registers[int(location)].value = int(value[2:])
+    def write_register(self, location, value):
+        self.registers[int(location)].value = int(value)
 
-    def write_vram(self, value, location):
+    def read_register(self, location):
+        return self.registers[int(location)].value
+
+    def write_vram(self, location, value):
         if value.startswith("#$"):
             self.vram.write(hex(int(location)), int(value[2:]))
 
-    def fetch_instruction(self, instruction):
-        # remove label, if present
+    def read_vram(self, location):
+        return self.vram.read(location)
+
+    def read_instruction(self, instruction):
         match instruction.split(" "):
             case[instruction, args]:
                 return self.instruction_set[instruction], args.split(",")
@@ -96,18 +140,32 @@ class CPU:
             case[instruction]:
                 return self.instruction_set[instruction], [""]
 
-    def execute_instruction(self, instruction, args):
-        if str(instruction) == "move.b":
-            instruction(*args)
+    def fetch_instruction(self):
+        return self.instruction_set[self.read_vram(self.program_counter)]
+
+    def execute_instruction(self, instruction):
+        if instruction == "move.b":
+            instruction.src = str(self.read_vram(self.program_counter+1))
+            instruction.dest = str(self.read_vram(self.program_counter+2))
 
             if instruction.dest.startswith("0x"):
-                self.write_vram(instruction.src, instruction.dest[2:])
+                self.write_vram(instruction.dest[2:], instruction.src)
 
-            elif instruction.dest.startswith("rx"):
-                self.write_register(instruction.src, instruction.dest[2:])
+            elif instruction.dest.startswith("d"):
+                self.write_register(instruction.dest[1:], instruction.src)
 
-        elif instruction.name == "halt":
+            for ticks in range(len(instruction)):
+                self.increment_program_counter()
+
+        elif instruction == "halt":
             self.stop = True
+
+        elif instruction == "jmp":
+            print("not implemented")
+
+        elif instruction == "rtn":
+            print("not implemented")
+
 
     def halt(self):
         self.stop = True
@@ -119,10 +177,7 @@ class CPU:
     def show(self):
         table = PrettyTable()
         table.field_names = ["Register", "Value"]
-
-        for register in self.registers:
-            table.add_row([f"{register.name}", register.value])
-
+        [table.add_row([f"{register.name}", register.value]) for register in self.registers]
         print(table)
 
     def __str__(self):
