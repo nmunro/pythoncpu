@@ -64,6 +64,7 @@ class InstructionSet:
             "move.b": InstructionMoveByte(),
             "01": InstructionMoveByte(),
             "jmp": InstructionJmp(),
+            "02": InstructionJmp(),
             "rtn": InstructionRtn(),
             "halt": InstructionHalt(),
             "04": InstructionHalt(),

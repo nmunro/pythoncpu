@@ -47,26 +47,33 @@ class CPU:
                 # Remember to find comments elsewhere in a line (not the beginning) and grab everything before the ";" character, attempt to use that as an instruction
                 instruction = line.split(" ", 1)
                 parsed_instruction = None
+                args = []
 
                 # If this line defines a function
                 if instruction[0].endswith(":"):
                     parsed_instruction, args = self.read_instruction(instruction[1])
-                    parsed_instruction(*args)
                     byte_sequence.append("##")
                     functions.append(instruction[0][:-1])
 
                 else:
                     parsed_instruction, args = self.read_instruction(" ".join(instruction))
-                    parsed_instruction(*args)
 
                 if parsed_instruction == "move.b":
+                    parsed_instruction.src = args[0][2:]
+                    parsed_instruction.dest = args[1]
                     byte_sequence.append(str(parsed_instruction))
 
                 elif parsed_instruction == "halt":
                     byte_sequence.append(str(parsed_instruction))
 
+                elif parsed_instruction == "jmp":
+                    #byte_sequence.append(str(parsed_instruction))
+                    #print(parsed_instruction)
+                    pass
+
                 elif parsed_instruction == "rtn":
-                    byte_sequence.append(str(parsed_instruction))
+                    #byte_sequence.append(str(parsed_instruction))
+                    pass
 
         byte_sequence = "".join(byte_sequence)
 
@@ -97,7 +104,6 @@ class CPU:
     def run(self):
         # Find the "start:" function and set the program counter to that!
         self.program_counter = self.functions["start"]
-        print(f"Program Counter: {self.program_counter}")
 
         while not self.stop:
             try:
