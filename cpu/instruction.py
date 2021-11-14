@@ -29,6 +29,11 @@ class Instruction:
         return f"<Instruction (self.name): {hex(self)}>"
 
 
+class InstructionNoOp(Instruction):
+    def __init__(self):
+        super().__init__("noop", 0)
+
+
 class InstructionMoveByte(Instruction):
     def __init__(self):
         super().__init__("move.b", 1)
@@ -61,11 +66,18 @@ class InstructionHalt(Instruction):
 class InstructionSet:
     def __init__(self):
         self.instructions = {
+            "noop": InstructionNoOp(),
+            "00": InstructionNoOp(),
+
             "move.b": InstructionMoveByte(),
             "01": InstructionMoveByte(),
+
             "jmp": InstructionJmp(),
             "02": InstructionJmp(),
+
             "rtn": InstructionRtn(),
+            "03": InstructionRtn(),
+
             "halt": InstructionHalt(),
             "04": InstructionHalt(),
         }

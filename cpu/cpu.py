@@ -35,6 +35,9 @@ class CPU:
         self.functions = {}
         self.instruction_set = InstructionSet()
 
+    def read_lines(self, lines):
+        return [line.strip() for line in lines if not line.strip() == "" and not line.strip().startswith(";")]
+
     def boot(self, program_name: str) -> None:
         print(f"Loading program {program_name} into lower memory...")
 
@@ -43,7 +46,7 @@ class CPU:
         with Path(program_name).open() as f:
             byte_sequence = []
 
-            for num, line in enumerate([line.strip() for line in f.readlines() if not line.strip() == "" and not line.strip().startswith(";")]):
+            for num, line in enumerate(self.read_lines(f.readlines())):
                 # Remember to find comments elsewhere in a line (not the beginning) and grab everything before the ";" character, attempt to use that as an instruction
                 instruction = line.split(" ", 1)
                 parsed_instruction = None
@@ -64,6 +67,9 @@ class CPU:
                     byte_sequence.append(str(parsed_instruction))
 
                 elif parsed_instruction == "halt":
+                    byte_sequence.append(str(parsed_instruction))
+
+                elif parsed_instruction == "noop":
                     byte_sequence.append(str(parsed_instruction))
 
                 elif parsed_instruction == "jmp":
@@ -154,17 +160,20 @@ class CPU:
             elif instruction.dest.startswith("d"):
                 self.write_register(instruction.dest[1:], instruction.src)
 
-            for ticks in range(len(instruction)):
-                self.increment_program_counter()
-
         elif instruction == "halt":
             self.stop = True
+
+        elif instruction == "noop":
+            pass
 
         elif instruction == "jmp":
             print("not implemented")
 
         elif instruction == "rtn":
             print("not implemented")
+
+        for args in range(len(instruction)):
+            self.increment_program_counter()
 
 
     def halt(self):

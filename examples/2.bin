@@ -1,25 +1,9 @@
-do_stuff: move.b #$24,0x0
-          rtn
-
-do_more_stuff: move.b #$23,0x0
-          rtn
-
 start: move.b #$1,d0
-       move.b #$2,d1
-       move.b #$3,d2
-       move.b #$4,d3
-       move.b #$5,d4
-       move.b #$6,d5
-       move.b #$7,d6
+       noop
+       noop
+       noop
+       noop
+       noop
+       noop
        move.b #$8,d7
-       ;move.b #$8,0x0
-       ;move.b #$9,0x1
-       ;move.b #$10,0x2
-       ;move.b #$11,0x3
-       ;move.b #$12,0x4
-       ;move.b #$13,0x5
-       ;move.b #$14,0x6
-       ;move.b #$15,0x7
-       ;jmp do_stuff
-       ;jmp do_more_stuff
        halt
