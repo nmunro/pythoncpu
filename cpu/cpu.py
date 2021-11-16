@@ -23,14 +23,13 @@ class Register:
 class CPU:
     def __init__(self, registers, clock, vram):
         self.registers = [Register(x) for x in range(registers)]
+        self.start = 0
         self.program_counter = 0
         self.clock = clock
         self.vram = vram
         self.stop = False
         self.flags = Flags("z", "n", "v", "c")
-        self.program = []
         self.stack = Stack()
-        self.labels = {}
         self.instruction_set = InstructionSet()
 
         # Needed prefixs
@@ -40,80 +39,43 @@ class CPU:
         # Data types
         self.DECIMAL_NUMBER_PREFIX = "#$"
 
-    def read_lines(self, lines):
-        return [line.strip() for line in lines if not line.strip() == "" and not line.strip().startswith(";")]
-
     def load_code(self, program_name):
         with Path(program_name).open() as f:
-            return self.read_lines(f.readlines())
+            code = [line.strip() for line in f.readlines()]
+            start = 0
+            length = 0
+            start_tracking = False
+            instructions = []
+
+            for num, line in enumerate(code):
+                if start_tracking:
+                    instructions.append(line)
+
+                elif line.startswith("START:"):
+                    start = code[num].split(" ")[1]
+
+                elif line.startswith("LENGTH:"):
+                    length = code[num].split(" ")[1]
+
+                elif line.startswith(".CODE"):
+                    start_tracking = True
+
+            return int(start), length, instructions
 
     def boot(self, program_name: str) -> None:
-        labels = {}
         instructions = []
-        fn_offset = 0
-        code = self.load_code(program_name)
-
-        # First pass to find labels
-        offset = 0
-
-        for num, instruction in enumerate(code):
-            print("\r", f"Parsing {str(num).zfill(len(str(len(code))))}/{len(code)}...", end="")
-            parsed_instruction, args = self.read_instruction(instruction)
-            offset += parsed_instruction.operands * parsed_instruction.length
-
-            if parsed_instruction == "define":
-                labels[args[0]] = offset
-                parsed_instruction.label = labels[args[0]]
-
-            time.sleep(self.clock.tick)
-
-        print("\r", f"Parsing {str(num+1).zfill(len(str(len(code))))}/{len(code)}... Done!")
-
-        # Second pass parsing
-        for num, instruction in enumerate(code):
-            # Remember to find comments elsewhere in a line (not the beginning) and grab everything before the ";" character, attempt to use that as an instruction
-            print("\r", f"Linking {str(num).zfill(len(str(len(code))))}/{len(code)}...", end="")
-            parsed_instruction, args = self.read_instruction(instruction)
-
-            # If this line defines a label
-            if parsed_instruction == "define":
-                labels[args[0]] = fn_offset
-                parsed_instruction.label = labels[args[0]]
-                instructions.append(str(parsed_instruction))
-
-            elif parsed_instruction == "move.b":
-                parsed_instruction.src = args[0][2:]
-                parsed_instruction.dest = args[1]
-                instructions.append(str(parsed_instruction))
-
-            elif parsed_instruction == "halt":
-                instructions.append(str(parsed_instruction))
-
-            elif parsed_instruction == "noop":
-                instructions.append(str(parsed_instruction))
-
-            elif parsed_instruction == "jmp":
-                parsed_instruction.label = labels[args[0]];
-                instructions.append(str(parsed_instruction))
-
-            # Update label offset
-            fn_offset += len(parsed_instruction)
-            time.sleep(self.clock.tick)
-
-        print("\r", f"Linking {str(num+1).zfill(len(str(len(code))))}/{len(code)}... Done!")
-
-        self.labels = labels
-
+        start, length, instructions = self.load_code(program_name)
         num = 0
+
         for a, seq in enumerate(instructions, 1):
             for n, x in enumerate([x for x in range(0, len(seq), 2)]):
                 self.vram.write(num, seq[x:x+2])
                 num += 1
                 time.sleep(self.clock.tick)
+                print("\r", f"Loading instruction: {str(a).zfill(len(str(length)))}/{length}...", end="")
 
-            print("\r", f"Loading instruction: {str(a).zfill(len(str(len(code))))}/{len(code)} ({seq[0:2]}) into {hex(num)}...", end="")
-
-        print("\r", f"Loading instruction {len(code)}/{len(code)} ({seq[0:2]}) into {hex(num)}... Done!")
+        print("\r", f"Loading instruction {length}/{length}... Done!")
+        self.start = start
 
     def increment_program_counter(self):
         self.program_counter += 1
@@ -122,18 +84,14 @@ class CPU:
         self.program_counter = int(location)
 
     def run(self):
-        # Find the "start:" function and set the program counter to that, offset it by two (for the def and start)!
-        try:
-            self.program_counter = self.labels["start"]
-
-        except KeyError:
-            exit("Error: No start function defined, aborting...")
+        # Since the start memory location is determined, load it into the program counter
+        # and begin the fetch/execute cycle
+        self.program_counter = self.start
 
         while not self.stop:
             try:
-                # This will need to read the PC and load an instruction from memory not from self.program
-                instruction = self.fetch_instruction()
-                self.execute_instruction(instruction)
+                # This will need to read the PC and load an instruction from memory
+                self.execute_instruction(self.fetch_instruction())
                 time.sleep(self.clock.tick)
 
             except IndexError as e:
@@ -156,47 +114,34 @@ class CPU:
     def read_vram(self, location):
         return self.vram.read(location)
 
-    def read_instruction(self, instruction):
-        match instruction.split(" "):
-            case[instruction, args]:
-                return self.instruction_set[instruction], args.split(",")
-
-            case[instruction]:
-                return self.instruction_set[instruction], [""]
-
     def fetch_instruction(self):
-        try:
-            return self.instruction_set[self.read_vram(self.program_counter)]
-
-        except KeyError as e:
-            self.vram.show()
+        return self.instruction_set[self.read_vram(self.program_counter)]
 
     def execute_instruction(self, instruction):
         if instruction == "move.b":
             instruction.src = str(self.read_vram(self.program_counter+1))
             instruction.dest = str(self.read_vram(self.program_counter+2))
-            neg_flag = 0
-            zero_flag = 0
 
             if instruction.dest.startswith(self.MEMORY_CELL_PREFIX):
                 self.write_vram(instruction.dest[2:], instruction.src)
-                neg_flag = int(self.read_vram(instruction.dest[2:]) < 0)
-                zero_flag = int(self.read_vram(instruction.dest[2:]) == 0)
+                self.flags.set("n", int(self.read_vram(instruction.dest[2:]) < 0))
+                self.flags.set("z", int(self.read_vram(instruction.dest[2:]) == 0))
 
             elif instruction.dest.startswith(self.REGISTER_PREFIX):
                 self.write_register(instruction.dest[1:], instruction.src)
-                neg_flag = int(self.read_register(instruction.dest[1:]) < 0)
-                zero_flag = int(self.read_register(instruction.dest[1:]) == 0)
+                self.flags.set("n", int(self.read_register(instruction.dest[1:]) < 0))
+                self.flags.set("z", int(self.read_register(instruction.dest[1:]) == 0))
 
-            self.flags.set("n", neg_flag)
-            self.flags.set("z", zero_flag)
+            # These flags are cleared irrespective of what happens in a move
             self.flags.clear("v")
             self.flags.clear("c")
 
+            # Move program counter forward
             for args in range(len(instruction)):
                 self.increment_program_counter()
 
         elif instruction == "halt":
+            # Set the global stop to the fetch/execute cycle can halt
             self.stop = True
 
         elif instruction == "define":
