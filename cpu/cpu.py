@@ -3,6 +3,7 @@ from pathlib import Path
 
 from prettytable import PrettyTable
 
+from flags import Flags
 from instructions import InstructionSet
 from stack import Stack
 
@@ -26,10 +27,7 @@ class CPU:
         self.clock = clock
         self.vram = vram
         self.stop = False
-        self.z = 0  # zero flag, if the result of some operation was zero
-        self.n = 0  # negative flag, if the result of some operation was a negative number
-        self.v = 0  # overflow flag, when a value to0 large to store in a register was attempted
-        self.c = 0  # carry flag, when a value is too large to store in a register the "carry" can be flagged
+        self.flags = Flags("z", "n", "v", "c")
         self.program = []
         self.stack = Stack()
         self.labels = {}
@@ -177,12 +175,23 @@ class CPU:
         if instruction == "move.b":
             instruction.src = str(self.read_vram(self.program_counter+1))
             instruction.dest = str(self.read_vram(self.program_counter+2))
+            neg_flag = 0
+            zero_flag = 0
 
             if instruction.dest.startswith(self.MEMORY_CELL_PREFIX):
                 self.write_vram(instruction.dest[2:], instruction.src)
+                neg_flag = int(self.read_vram(instruction.dest[2:]) < 0)
+                zero_flag = int(self.read_vram(instruction.dest[2:]) == 0)
 
             elif instruction.dest.startswith(self.REGISTER_PREFIX):
                 self.write_register(instruction.dest[1:], instruction.src)
+                neg_flag = int(self.read_register(instruction.dest[1:]) < 0)
+                zero_flag = int(self.read_register(instruction.dest[1:]) == 0)
+
+            self.flags.set("n", neg_flag)
+            self.flags.set("z", zero_flag)
+            self.flags.clear("v")
+            self.flags.clear("c")
 
             for args in range(len(instruction)):
                 self.increment_program_counter()
@@ -209,6 +218,7 @@ class CPU:
         print("Halting and displaying machine state.")
         self.show()
         self.vram.show()
+        self.flags.show()
         exit()
 
     def show(self):
