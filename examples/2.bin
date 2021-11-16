@@ -1,4 +1,4 @@
-def start
+define start
 move.b #$1,d0
 noop
 noop

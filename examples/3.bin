@@ -1,4 +1,4 @@
-def start
+define start
 move.b #$1,d0
 jmp stuff
 move.b #$2,d1
@@ -8,6 +8,6 @@ move.b #$5,d4
 move.b #$6,d5
 move.b #$7,d6
 
-def stuff
+define stuff
 move.b #$8,d7
 halt
