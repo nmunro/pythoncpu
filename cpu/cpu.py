@@ -180,9 +180,17 @@ class CPU:
 
             if instruction.dest.startswith(self.MEMORY_CELL_PREFIX):
                 self.write_vram(instruction.dest[2:], instruction.src)
+                self.n = 1 if self.read_vram(instruction.dest[2:]) < 0 else 0
+                self.z = 1 if self.read_vram(instruction.dest[2:]) == 0 else 0
 
             elif instruction.dest.startswith(self.REGISTER_PREFIX):
                 self.write_register(instruction.dest[1:], instruction.src)
+                self.n = 1 if self.read_register(instruction.dest[1:]) < 0 else 0
+                self.z = 1 if self.read_register(instruction.dest[1:]) == 0 else 0
+
+            # Now, set the flags
+            self.v = 0 # Always cleared on a move
+            self.c = 0 # Always cleared on a move
 
             for args in range(len(instruction)):
                 self.increment_program_counter()
@@ -209,6 +217,13 @@ class CPU:
         print("Halting and displaying machine state.")
         self.show()
         self.vram.show()
+        table = PrettyTable()
+        table.field_names = ["Flag", "Value"]
+        table.add_row(["Negative", self.n])
+        table.add_row(["Zero", self.z])
+        table.add_row(["Carry", self.c])
+        table.add_row(["Overflow", self.v])
+        print(table)
         exit()
 
     def show(self):
