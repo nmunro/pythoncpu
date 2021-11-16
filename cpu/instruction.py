@@ -1,8 +1,16 @@
+from enum import Enum
+
+class Length(Enum):
+    byte = 1 # 1 byte
+    word = 2 # 2 bytes
+    long = 4 # 4 bytes
+
 class Instruction:
     def __init__(self, name, code):
         self.name = name.lower()
-        self.code = code
+        self.code = f"{code}".zfill(2)
         self.operands = 1
+        self.length = Length.byte
 
     def __len__(self):
         return self.operands
@@ -23,7 +31,7 @@ class Instruction:
         return self.name == other
 
     def __str__(self):
-        return f"{str(hex(self.code))[2:].zfill(2)}"
+        return f"{str(hex(int(self.code)))[2:].zfill(2)}"
 
     def __repr__(self):
         return f"<Instruction (self.name): {hex(self)}>"
@@ -42,18 +50,25 @@ class InstructionMoveByte(Instruction):
         self.operands = 3
 
     def __str__(self):
-        return f"{str(hex(self.code))[2:].zfill(2)}{self.src.zfill(2)}{self.dest.zfill(2)}"
+        return f"{str(hex(int(self.code)))[2:].zfill(2)}{self.src.zfill(2)}{self.dest.zfill(2)}"
 
 
 class InstructionJmp(Instruction):
     def __init__(self):
         super().__init__("jmp", 2)
+        self.label = ""
         self.operands = 2
 
+    @property
+    def label(self):
+        return self._label
 
-class InstructionRtn(Instruction):
-    def __init__(self):
-        super().__init__("rtn", 3)
+    @label.setter
+    def label(self, label):
+        self._label = f"{label}".zfill(2)
+
+    def __str__(self):
+        return f"{str(hex(int(self.code)))[2:].zfill(2)}{self.label}"
 
 
 class InstructionHalt(Instruction):
@@ -61,7 +76,26 @@ class InstructionHalt(Instruction):
         super().__init__("halt", 4)
 
     def __str__(self):
-        return f"{str(hex(self.code))[2:].zfill(2)}"
+        return f"{str(hex(int(self.code)))[2:].zfill(2)}"
+
+
+class InstructionDef(Instruction):
+    def __init__(self):
+        super().__init__("def", 5)
+        self._label = ""
+        self.operands = 2
+
+    @property
+    def label(self):
+        return self._label
+
+    @label.setter
+    def label(self, label):
+        self._label = f"{label}".zfill(2)
+
+    def __str__(self):
+        return f"{str(hex(int(self.code)))[2:].zfill(2)}{self.label}"
+
 
 class InstructionSet:
     def __init__(self):
@@ -75,11 +109,11 @@ class InstructionSet:
             "jmp": InstructionJmp(),
             "02": InstructionJmp(),
 
-            "rtn": InstructionRtn(),
-            "03": InstructionRtn(),
-
             "halt": InstructionHalt(),
             "04": InstructionHalt(),
+
+            "def": InstructionDef(),
+            "05": InstructionDef(),
         }
 
     def __len__(self):

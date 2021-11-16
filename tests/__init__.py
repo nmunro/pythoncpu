@@ -1,1 +1,1 @@
-from .cpu import *  # noqa
+from .cpu_tests import *  # noqa

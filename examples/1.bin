@@ -1,9 +1,10 @@
-start: move.b #$1,d0
-       move.b #$2,d1
-       move.b #$3,d2
-       move.b #$4,d3
-       move.b #$5,d4
-       move.b #$6,d5
-       move.b #$7,d6
-       move.b #$8,d7
-       halt
+def start
+move.b #$1,d0
+move.b #$2,d1
+move.b #$3,d2
+move.b #$4,d3
+move.b #$5,d4
+move.b #$6,d5
+move.b #$7,d6
+move.b #$8,d7
+halt

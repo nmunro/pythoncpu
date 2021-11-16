@@ -32,72 +32,78 @@ class CPU:
         self.c = 0  # carry flag, when a value is too large to store in a register the "carry" can be flagged
         self.program = []
         self.stack = Stack()
-        self.functions = {}
+        self.labels = {}
         self.instruction_set = InstructionSet()
+
+        # Needed prefixs
+        self.MEMORY_CELL_PREFIX = "0x"
+        self.REGISTER_PREFIX = "d"
+
+        # Data types
+        self.DECIMAL_NUMBER_PREFIX = "#$"
 
     def read_lines(self, lines):
         return [line.strip() for line in lines if not line.strip() == "" and not line.strip().startswith(";")]
 
+    def load_code(self, program_name):
+        with Path(program_name).open() as f:
+            return self.read_lines(f.readlines())
+
     def boot(self, program_name: str) -> None:
         print(f"Loading program {program_name} into lower memory...")
 
-        functions = []
-
-        with Path(program_name).open() as f:
-            byte_sequence = []
-
-            for num, line in enumerate(self.read_lines(f.readlines())):
-                # Remember to find comments elsewhere in a line (not the beginning) and grab everything before the ";" character, attempt to use that as an instruction
-                instruction = line.split(" ", 1)
-                parsed_instruction = None
-                args = []
-
-                # If this line defines a function
-                if instruction[0].endswith(":"):
-                    parsed_instruction, args = self.read_instruction(instruction[1])
-                    byte_sequence.append("##")
-                    functions.append(instruction[0][:-1])
-
-                else:
-                    parsed_instruction, args = self.read_instruction(" ".join(instruction))
-
-                if parsed_instruction == "move.b":
-                    parsed_instruction.src = args[0][2:]
-                    parsed_instruction.dest = args[1]
-                    byte_sequence.append(str(parsed_instruction))
-
-                elif parsed_instruction == "halt":
-                    byte_sequence.append(str(parsed_instruction))
-
-                elif parsed_instruction == "noop":
-                    byte_sequence.append(str(parsed_instruction))
-
-                elif parsed_instruction == "jmp":
-                    #byte_sequence.append(str(parsed_instruction))
-                    #print(parsed_instruction)
-                    pass
-
-                elif parsed_instruction == "rtn":
-                    #byte_sequence.append(str(parsed_instruction))
-                    pass
-
-        byte_sequence = "".join(byte_sequence)
-
+        labels = {}
+        instructions = []
         fn_offset = 0
-        fn_count = 0
+        code = self.load_code(program_name)
 
-        for num, x in enumerate([x for x in range(0, len(byte_sequence), 2)]):
-            if byte_sequence[x:x+2] == "##":
-                self.functions[functions[fn_count]] = fn_offset
-                fn_count += 1
+        # First pass to find labels
+        offset = 0
 
-            else:
-                fn_offset += 1
+        for num, instruction in enumerate(code):
+            parsed_instruction, args = self.read_instruction(instruction)
+            offset += parsed_instruction.operands * parsed_instruction.length.value
 
-        byte_sequence = byte_sequence.replace("##", "")
+            if parsed_instruction == "def":
+                labels[args[0]] = offset
+                parsed_instruction.label = labels[args[0]]
 
-        for num, x in enumerate([x for x in range(0, len(byte_sequence), 2)]):
-            self.vram.write(num, byte_sequence[x:x+2])
+        # Second pass parsing
+        for num, instruction in enumerate(code):
+            # Remember to find comments elsewhere in a line (not the beginning) and grab everything before the ";" character, attempt to use that as an instruction
+            parsed_instruction, args = self.read_instruction(instruction)
+
+            # If this line defines a label
+            if parsed_instruction == "def":
+                labels[args[0]] = fn_offset
+                parsed_instruction.label = labels[args[0]]
+                instructions.append(str(parsed_instruction))
+
+            elif parsed_instruction == "move.b":
+                parsed_instruction.src = args[0][2:]
+                parsed_instruction.dest = args[1]
+                instructions.append(str(parsed_instruction))
+
+            elif parsed_instruction == "halt":
+                instructions.append(str(parsed_instruction))
+
+            elif parsed_instruction == "noop":
+                instructions.append(str(parsed_instruction))
+
+            elif parsed_instruction == "jmp":
+                parsed_instruction.label = labels[args[0]];
+                instructions.append(str(parsed_instruction))
+
+            # Update label offset
+            fn_offset += len(parsed_instruction)
+
+        self.labels = labels
+
+        num = 0
+        for seq in instructions:
+            for n, x in enumerate([x for x in range(0, len(seq), 2)]):
+                self.vram.write(num, seq[x:x+2])
+                num += 1
 
         print("Done!")
 
@@ -105,11 +111,11 @@ class CPU:
         self.program_counter += 1
 
     def set_program_counter(self, location):
-        self.program_counter = location
+        self.program_counter = int(location)
 
     def run(self):
-        # Find the "start:" function and set the program counter to that!
-        self.program_counter = self.functions["start"]
+        # Find the "start:" function and set the program counter to that, offset it by two (for the def and start)!
+        self.program_counter = self.labels["start"]
 
         while not self.stop:
             try:
@@ -132,7 +138,7 @@ class CPU:
         return self.registers[int(location)].value
 
     def write_vram(self, location, value):
-        if value.startswith("#$"):
+        if value.startswith(self.DECIMAL_NUMBER_PREFIX):
             self.vram.write(hex(int(location)), int(value[2:]))
 
     def read_vram(self, location):
@@ -147,34 +153,41 @@ class CPU:
                 return self.instruction_set[instruction], [""]
 
     def fetch_instruction(self):
-        return self.instruction_set[self.read_vram(self.program_counter)]
+        try:
+            return self.instruction_set[self.read_vram(self.program_counter)]
+
+        except KeyError as e:
+            self.vram.show()
 
     def execute_instruction(self, instruction):
         if instruction == "move.b":
             instruction.src = str(self.read_vram(self.program_counter+1))
             instruction.dest = str(self.read_vram(self.program_counter+2))
 
-            if instruction.dest.startswith("0x"):
+            if instruction.dest.startswith(self.MEMORY_CELL_PREFIX):
                 self.write_vram(instruction.dest[2:], instruction.src)
 
-            elif instruction.dest.startswith("d"):
+            elif instruction.dest.startswith(self.REGISTER_PREFIX):
                 self.write_register(instruction.dest[1:], instruction.src)
+
+            for args in range(len(instruction)):
+                self.increment_program_counter()
 
         elif instruction == "halt":
             self.stop = True
+
+        elif instruction == "def":
+            instruction.label = str(self.read_vram(self.program_counter+1))
+
+            for args in range(len(instruction)):
+                self.increment_program_counter()
 
         elif instruction == "noop":
             pass
 
         elif instruction == "jmp":
-            print("not implemented")
-
-        elif instruction == "rtn":
-            print("not implemented")
-
-        for args in range(len(instruction)):
-            self.increment_program_counter()
-
+            instruction.label = str(self.read_vram(self.program_counter+1))
+            self.set_program_counter(instruction.label)
 
     def halt(self):
         self.stop = True
