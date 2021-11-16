@@ -1,0 +1,16 @@
+def alpha
+move.b #$1,d0
+jmp beta
+
+def start
+jmp alpha
+
+def beta
+move.b #$20,d1
+move.b #$30,d2
+move.b #$40,d3
+move.b #$50,d4
+move.b #$60,d5
+move.b #$70,d6
+move.b #$80,d7
+halt
