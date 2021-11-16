@@ -2,9 +2,6 @@ define alpha
 move.b #$1,d0
 jmp beta
 
-define start
-jmp alpha
-
 define beta
 move.b #$20,d1
 move.b #$30,d2
@@ -14,3 +11,6 @@ move.b #$60,d5
 move.b #$70,d6
 move.b #$80,d7
 halt
+
+define start
+jmp alpha

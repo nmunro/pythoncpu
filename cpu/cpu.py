@@ -3,7 +3,7 @@ from pathlib import Path
 
 from prettytable import PrettyTable
 
-from instruction import InstructionSet
+from instructions import InstructionSet
 from stack import Stack
 
 
@@ -50,8 +50,6 @@ class CPU:
             return self.read_lines(f.readlines())
 
     def boot(self, program_name: str) -> None:
-        print(f"Loading program {program_name} into lower memory...")
-
         labels = {}
         instructions = []
         fn_offset = 0
@@ -61,20 +59,26 @@ class CPU:
         offset = 0
 
         for num, instruction in enumerate(code):
+            print("\r", f"Parsing {str(num).zfill(len(str(len(code))))}/{len(code)}...", end="")
             parsed_instruction, args = self.read_instruction(instruction)
-            offset += parsed_instruction.operands * parsed_instruction.length.value
+            offset += parsed_instruction.operands * parsed_instruction.length
 
-            if parsed_instruction == "def":
+            if parsed_instruction == "define":
                 labels[args[0]] = offset
                 parsed_instruction.label = labels[args[0]]
+
+            time.sleep(self.clock.tick)
+
+        print("\r", f"Parsing {str(num+1).zfill(len(str(len(code))))}/{len(code)}... Done!")
 
         # Second pass parsing
         for num, instruction in enumerate(code):
             # Remember to find comments elsewhere in a line (not the beginning) and grab everything before the ";" character, attempt to use that as an instruction
+            print("\r", f"Linking {str(num).zfill(len(str(len(code))))}/{len(code)}...", end="")
             parsed_instruction, args = self.read_instruction(instruction)
 
             # If this line defines a label
-            if parsed_instruction == "def":
+            if parsed_instruction == "define":
                 labels[args[0]] = fn_offset
                 parsed_instruction.label = labels[args[0]]
                 instructions.append(str(parsed_instruction))
@@ -96,16 +100,22 @@ class CPU:
 
             # Update label offset
             fn_offset += len(parsed_instruction)
+            time.sleep(self.clock.tick)
+
+        print("\r", f"Linking {str(num+1).zfill(len(str(len(code))))}/{len(code)}... Done!")
 
         self.labels = labels
 
         num = 0
-        for seq in instructions:
+        for a, seq in enumerate(instructions, 1):
             for n, x in enumerate([x for x in range(0, len(seq), 2)]):
                 self.vram.write(num, seq[x:x+2])
                 num += 1
+                time.sleep(self.clock.tick)
 
-        print("Done!")
+            print("\r", f"Loading instruction: {str(a).zfill(len(str(len(code))))}/{len(code)} ({seq[0:2]}) into {hex(num)}...", end="")
+
+        print("\r", f"Loading instruction {len(code)}/{len(code)} ({seq[0:2]}) into {hex(num)}... Done!")
 
     def increment_program_counter(self):
         self.program_counter += 1
@@ -115,7 +125,11 @@ class CPU:
 
     def run(self):
         # Find the "start:" function and set the program counter to that, offset it by two (for the def and start)!
-        self.program_counter = self.labels["start"]
+        try:
+            self.program_counter = self.labels["start"]
+
+        except KeyError:
+            exit("Error: No start function defined, aborting...")
 
         while not self.stop:
             try:
@@ -176,14 +190,15 @@ class CPU:
         elif instruction == "halt":
             self.stop = True
 
-        elif instruction == "def":
+        elif instruction == "define":
             instruction.label = str(self.read_vram(self.program_counter+1))
 
             for args in range(len(instruction)):
                 self.increment_program_counter()
 
         elif instruction == "noop":
-            pass
+            for args in range(len(instruction)):
+                self.increment_program_counter()
 
         elif instruction == "jmp":
             instruction.label = str(self.read_vram(self.program_counter+1))
@@ -191,7 +206,7 @@ class CPU:
 
     def halt(self):
         self.stop = True
-        print("Halting!")
+        print("Halting and displaying machine state.")
         self.show()
         self.vram.show()
         exit()
