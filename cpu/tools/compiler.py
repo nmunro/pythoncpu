@@ -19,17 +19,17 @@ def read_instruction(instruction):
 
 
 @click.command()
-@click.option("--file", help="The program to compile", required=True)
+@click.option("--input", help="The program to compile", required=True)
 @click.option("--output", help="The name of the output file", required=True)
-def compile(file, output):
-    print(f"Compiling: {file} to {output}...")
+def compile(input, output):
+    print(f"Compiling: {input} to {output}...")
     code = ""
     offset = 0
     fn_offset = 0
     labels = {}
     instructions = []
 
-    with Path(file).open() as f:
+    with Path(input).open() as f:
         code = read_lines(f.readlines())
 
     # First pass to find labels
