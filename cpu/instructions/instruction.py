@@ -3,25 +3,36 @@ from .byte import InstructionHalt
 from .byte import InstructionJmp
 from .byte import InstructionNoOp
 from .byte import InstructionMoveByte
+from .byte import InstructionCMPByte
 
 
 class InstructionSet:
     def __init__(self):
+        noop = InstructionNoOp()
+        move_byte = InstructionMoveByte()
+        jmp = InstructionJmp()
+        halt = InstructionHalt()
+        define = InstructionDefine()
+        cmp_byte = InstructionCMPByte()
+
         self.instructions = {
-            "noop": InstructionNoOp(),
-            "00": InstructionNoOp(),
+            f"{noop.name}": noop,
+            f"{noop.code}": noop,
 
-            "move.b": InstructionMoveByte(),
-            "01": InstructionMoveByte(),
+            f"{move_byte.name}": move_byte,
+            f"{move_byte.code}": move_byte,
 
-            "jmp": InstructionJmp(),
-            "02": InstructionJmp(),
+            f"{jmp.name}": jmp,
+            f"{jmp.code}": jmp,
 
-            "halt": InstructionHalt(),
-            "04": InstructionHalt(),
+            f"{halt.name}": halt,
+            f"{halt.code}": halt,
 
-            "define": InstructionDefine(),
-            "05": InstructionDefine(),
+            f"{define.name}": define,
+            f"{define.code}": define,
+
+            f"{cmp_byte.name}": cmp_byte,
+            f"{cmp_byte.code}": cmp_byte,
         }
 
     def __len__(self):
