@@ -11,7 +11,18 @@ from stack import Stack
 
 class CPU:
     def __init__(self, registers, clock, vram):
-        self.registers = [Register(x) for x in range(registers)]
+        self.DATA_REGISTER_PREFIX = "d"
+        self.ADDRESS_REGISTER_PREFIX = "a"
+        self.MEMORY_CELL_PREFIX = "0x"
+
+        # Data types
+        self.DECIMAL_NUMBER_PREFIX = "#$"
+
+        self.registers = {
+            "data": [Register(f"{self.DATA_REGISTER_PREFIX}{x}") for x in range(registers)],
+            "address": [Register(f"{self.ADDRESS_REGISTER_PREFIX}{x}") for x in range(registers)],
+        }
+
         self.start = 0
         self.program_counter = 0
         self.clock = clock
@@ -20,13 +31,6 @@ class CPU:
         self.flags = Flags("z", "n", "v", "c")
         self.stack = Stack()
         self.instruction_set = InstructionSet()
-
-        # Needed prefixs
-        self.MEMORY_CELL_PREFIX = "0x"
-        self.REGISTER_PREFIX = "d"
-
-        # Data types
-        self.DECIMAL_NUMBER_PREFIX = "#$"
 
     def load_code(self, program_name):
         with Path(program_name).open() as f:
@@ -90,11 +94,17 @@ class CPU:
         else:
             self.halt()
 
-    def write_register(self, location, value):
-        self.registers[int(location)].value = int(value)
+    def write_data_register(self, location, value):
+        self.registers["data"][int(location)].value = int(value)
 
-    def read_register(self, location):
-        return self.registers[int(location)].value
+    def read_data_register(self, location):
+        return self.registers["data"][int(location)].value
+
+    def write_address_register(self, location_value):
+        self.registers["address"][int(location)].value = int(value)
+
+    def read_address_register(self, location):
+        return self.registers["address"][int(location)].value
 
     def write_vram(self, location, value):
         if value.startswith(self.DECIMAL_NUMBER_PREFIX):
@@ -116,10 +126,10 @@ class CPU:
                 self.flags.set("n", int(self.read_vram(instruction.dest[2:]) < 0))
                 self.flags.set("z", int(self.read_vram(instruction.dest[2:]) == 0))
 
-            elif instruction.dest.startswith(self.REGISTER_PREFIX):
-                self.write_register(instruction.dest[1:], instruction.src)
-                self.flags.set("n", int(self.read_register(instruction.dest[1:]) < 0))
-                self.flags.set("z", int(self.read_register(instruction.dest[1:]) == 0))
+            elif instruction.dest.startswith(self.DATA_REGISTER_PREFIX):
+                self.write_data_register(instruction.dest[1:], instruction.src)
+                self.flags.set("n", int(self.read_data_register(instruction.dest[1:]) < 0))
+                self.flags.set("z", int(self.read_data_register(instruction.dest[1:]) == 0))
 
             # These flags are cleared irrespective of what happens in a move
             self.flags.clear("v")
@@ -147,6 +157,48 @@ class CPU:
             instruction.label = str(self.read_vram(self.program_counter+1))
             self.set_program_counter(instruction.label)
 
+        elif instruction == "cmp.b":
+            instruction.source = str(self.read_vram(self.program_counter+1))
+            instruction.destination = str(self.read_vram(self.program_counter+2))
+
+            result = 0
+
+            # If dealing with src data registers
+            if instruction.source.startswith(self.DATA_REGISTER_PREFIX):
+                if instruction.destination.startswith(self.DATA_REGISTER_PREFIX):
+                    result = self.read_data_register(instruction.destination[1:]) - self.read_data_register(instruction.source[1:])
+
+                elif instruction.destination.startswith(self.ADDRESS_REGISTER_PREFIX):
+                    result = self.read_address_register(instruction.destination[1:]) - self.read_data_register(instruction.source[1:])
+
+                else:
+                    result = int(instruction.destination) - self.read_data_register(instruction.source[1:])
+
+            # If dealing with src memory registers
+            elif instruction.source.startswith(self.ADDRESS_REGISTER_PREFIX):
+                if instruction.destination.startswith(self.DATA_REGISTER_PREFIX):
+                    result = self.read_data_register(instruction.destination[1:]) - self.read_address_register(instruction.source[1:])
+
+                elif instruction.destination.startswith(self.ADDRESS_REGISTER_PREFIX):
+                    result = self.read_address_register(instruction.destination[1:]) - self.read_address_register(instruction.source[1:])
+
+                else:
+                    result = int(instruction.destination) - self.read_address_register(instruction.source[1:])
+
+            # If dealing with both being numbers
+            else:
+                result = int(instruction.destination) - int(instruction.source)
+
+            # set ccr flags
+            self.flags.set("n", int(result < 0))
+            self.flags.set("z", int(result == 0))
+            self.flags.clear("v")
+            self.flags.clear("c")
+
+            # Increment program counter
+            for args in range(len(instruction)):
+                self.increment_program_counter()
+
     def halt(self):
         self.stop = True
         print("Halting and displaying machine state.")
@@ -157,12 +209,18 @@ class CPU:
 
     def show(self):
         table = PrettyTable()
-        table.field_names = ["Register", "Value"]
-        [table.add_row([f"{register.name}", register.value]) for register in self.registers]
+        table.field_names = ["Data Register", "Data Value", "Address Register", "Address Value"]
+        for num in range(len(self.registers["data"])):
+            table.add_row([
+                self.registers['data'][num].name,
+                self.registers["data"][num].value,
+                self.registers['address'][num].name,
+                self.registers["address"][num].value,
+            ])
         print(table)
 
     def __str__(self):
-        return f"Clock {str(self.clock)} | Registers: {len(self.registers)}"
+        return f"Clock {str(self.clock)} | Registers: {len(self.registers['data'])}"
 
     def __repr__(self):
         return f"<CPU: {str(self)}>"
