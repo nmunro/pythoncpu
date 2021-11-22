@@ -1,9 +1,9 @@
 from .instruction import Instruction
 
 
-class InstructionDefine(Instruction):
+class InstructionJNG(Instruction):
     def __init__(self):
-        super().__init__("define", "05")
+        super().__init__("jng", "08")
         self._label = ""
         self.operands = 2
 

@@ -3,7 +3,7 @@ from .instruction import Instruction
 
 class InstructionMoveByte(Instruction):
     def __init__(self):
-        super().__init__("move.b", 1)
+        super().__init__("move.b", "01")
         self.src = ""
         self.dest = ""
         self.operands = 3

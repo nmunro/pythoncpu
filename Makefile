@@ -1,4 +1,4 @@
-.PHONY: env run test lint requires docs
+.PHONY: env run test lint requires docs compile
 .DEFAULT: env
 
 env:
@@ -6,7 +6,7 @@ env:
 	@poetry install
 
 run:
-	@poetry run python cpu/main.py
+	@poetry run python cpu/main.py --load $(LOAD)
 
 test:
 	@poetry run coverage run --branch -m unittest discover --pattern=tests/*.py && poetry run coverage html
@@ -20,3 +20,6 @@ lint:
 docs:
 	@poetry run sphinx-apidoc -f -o docs/source/ cpu ./tests/*.py
 	@cd docs && make html
+
+compile:
+	@poetry run python cpu/tools/compiler.py --input $(INPUT) --output $(OUTPUT)

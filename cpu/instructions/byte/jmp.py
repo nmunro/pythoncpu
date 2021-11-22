@@ -3,8 +3,8 @@ from .instruction import Instruction
 
 class InstructionJmp(Instruction):
     def __init__(self):
-        super().__init__("jmp", 2)
-        self.label = ""
+        super().__init__("jmp", "02")
+        self._label = ""
         self.operands = 2
 
     @property

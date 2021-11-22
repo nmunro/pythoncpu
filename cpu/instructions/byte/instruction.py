@@ -4,6 +4,7 @@ class Instruction:
         self.code = f"{code}".zfill(2)
         self.operands = 1
         self.length = 1
+        self.loop_count = 0
 
     def __len__(self):
         return self.operands
@@ -28,3 +29,16 @@ class Instruction:
 
     def __repr__(self):
         return f"<Instruction (self.name): {hex(self)}>"
+
+    def __iter__(self):
+        self.loop_count = 0
+        return self
+
+    def __next__(self):
+        if self.loop_count < self.operands:
+            result = self.loop_count
+            self.loop_count += 1
+            return result
+
+        else:
+            raise StopIteration

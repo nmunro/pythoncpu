@@ -1,0 +1,9 @@
+start: cmp.b #$0,#$1
+       jeq IsEqual
+       jmp NotEqual
+
+NotEqual: move.b #$-1,d0
+          halt
+
+IsEqual: move.b #$1,d0
+         halt

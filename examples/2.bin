@@ -1,10 +1,9 @@
-define start
-move.b #$1,d0
-noop
-noop
-noop
-noop
-noop
-noop
-move.b #$8,d7
-halt
+start: move.b #$1,d0
+       noop
+       noop
+       noop
+       noop
+       noop
+       noop
+       move.b #$8,d7
+       halt
