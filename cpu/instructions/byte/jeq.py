@@ -1,9 +1,9 @@
 from .instruction import Instruction
 
 
-class InstructionDefine(Instruction):
+class InstructionJEQ(Instruction):
     def __init__(self):
-        super().__init__("define", "05")
+        super().__init__("jeq", "09")
         self._label = ""
         self.operands = 2
 

@@ -1,6 +1,10 @@
 from .byte import InstructionDefine
 from .byte import InstructionHalt
+from .byte import InstructionJNG
+from .byte import InstructionJNZ
 from .byte import InstructionJmp
+from .byte import InstructionJEQ
+from .byte import InstructionJNE
 from .byte import InstructionNoOp
 from .byte import InstructionMoveByte
 from .byte import InstructionCMPByte
@@ -11,6 +15,12 @@ class InstructionSet:
         noop = InstructionNoOp()
         move_byte = InstructionMoveByte()
         jmp = InstructionJmp()
+        jng = InstructionJNG()
+        jnz = InstructionJNZ()
+
+        jeq = InstructionJEQ()
+        jne = InstructionJNE()
+
         halt = InstructionHalt()
         define = InstructionDefine()
         cmp_byte = InstructionCMPByte()
@@ -24,6 +34,18 @@ class InstructionSet:
 
             f"{jmp.name}": jmp,
             f"{jmp.code}": jmp,
+
+            f"{jng.name}": jng,
+            f"{jng.code}": jng,
+
+            f"{jnz.name}": jnz,
+            f"{jnz.code}": jnz,
+
+            f"{jeq.name}": jeq,
+            f"{jeq.code}": jeq,
+
+            f"{jne.name}": jne,
+            f"{jne.code}": jne,
 
             f"{halt.name}": halt,
             f"{halt.code}": halt,

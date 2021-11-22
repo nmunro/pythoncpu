@@ -3,8 +3,8 @@ from .instruction import Instruction
 
 class InstructionJNG(Instruction):
     def __init__(self):
-        super().__init__("jng", 8)
-        self.label = ""
+        super().__init__("jng", "08")
+        self._label = ""
         self.operands = 2
 
     @property

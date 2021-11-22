@@ -1,9 +1,9 @@
 from .instruction import Instruction
 
 
-class InstructionDefine(Instruction):
+class InstructionJNE(Instruction):
     def __init__(self):
-        super().__init__("define", "05")
+        super().__init__("jne", "0a")
         self._label = ""
         self.operands = 2
 
@@ -16,4 +16,4 @@ class InstructionDefine(Instruction):
         self._label = f"{label}".zfill(2)
 
     def __str__(self):
-        return f"{str(hex(int(self.code)))[2:].zfill(2)}{self.label}"
+        return f"{self.code}{self.label}"

@@ -3,6 +3,9 @@ from cpu.instructions import InstructionSet
 
 import click
 
+
+INSTRUCTION_SET = InstructionSet()
+
 class bcolors:
     HEADER = "\033[95m"
     OKBLUE = "\033[94m"
@@ -18,14 +21,15 @@ def read_lines(lines):
     return [line.strip() for line in lines if not line.strip() == "" and not line.strip().startswith(";")]
 
 def read_instruction(instruction):
-    instruction_set = InstructionSet()
+    match [s for s in instruction.split(" ") if s]:
+        case[label, instruction, args]:
+            return label[:-1], INSTRUCTION_SET[instruction.strip()], args.split(",")
 
-    match instruction.split(" "):
         case[instruction, args]:
-            return instruction_set[instruction], args.split(",")
+            return None, INSTRUCTION_SET[instruction.strip()], args.split(",")
 
         case[instruction]:
-            return instruction_set[instruction], [""]
+            return None, INSTRUCTION_SET[instruction.strip()], [""]
 
 
 @click.command()
@@ -46,12 +50,12 @@ def compile(input, output):
     try:
         for num, instruction in enumerate(code):
             print("\r", f"Compiling {str(num).zfill(len(str(len(code))))}/{len(code)}...", end="")
-            parsed_instruction, args = read_instruction(instruction)
-            offset += parsed_instruction.operands * parsed_instruction.length
+            label, parsed_instruction, args = read_instruction(instruction)
 
-            if parsed_instruction == "define":
-                labels[args[0]] = offset
-                parsed_instruction.label = labels[args[0]]
+            if label:
+                labels[label] = offset
+
+            offset += parsed_instruction.operands * parsed_instruction.length
 
     except KeyError as e:
         error = [
@@ -67,15 +71,9 @@ def compile(input, output):
     for num, instruction in enumerate(code):
         # Remember to find comments elsewhere in a line (not the beginning) and grab everything before the ";" character, attempt to use that as an instruction
         print("\r", f"Linking {str(num).zfill(len(str(len(code))))}/{len(code)}...", end="")
-        parsed_instruction, args = read_instruction(instruction)
+        label, parsed_instruction, args = read_instruction(instruction)
 
-        # If this line defines a label
-        if parsed_instruction == "define":
-            labels[args[0]] = fn_offset
-            parsed_instruction.label = labels[args[0]]
-            instructions.append(str(parsed_instruction))
-
-        elif parsed_instruction == "move.b":
+        if parsed_instruction == "move.b":
             if args[0].startswith("#$"):
                 parsed_instruction.src = args[0][2:]
 
@@ -92,18 +90,35 @@ def compile(input, output):
             instructions.append(str(parsed_instruction))
 
         elif parsed_instruction == "jmp":
-            parsed_instruction.label = labels[args[0]]
-            instructions.append(str(parsed_instruction))
+            try:
+                parsed_instruction.label = labels[args[0]]
+                instructions.append(str(parsed_instruction))
+
+            except KeyError as e:
+                error = [
+                    f"{bcolors.FAIL}\nCompilation failed!",
+                    f"Undefined label error on line {num+1}: {e} is not a recognized label, did you forget to define it or misspell it?{bcolors.ENDC}"
+                ]
+                exit("\n".join(error))
 
         elif parsed_instruction == "cmp.b":
             if args[0].startswith("#$"):
-                parsed_instruction.source = args[0][2:].zfill(2)
-                parsed_instruction.destination = args[1][2:].zfill(2)
+                parsed_instruction.src = args[0][2:].zfill(2)
+                parsed_instruction.dest = args[1][2:].zfill(2)
 
             else:
-                parsed_instruction.source = args[0]
-                parsed_instruction.destination = args[1]
+                parsed_instruction.src = args[0]
+                parsed_instruction.dest = args[1]
 
+            instructions.append(str(parsed_instruction))
+
+        elif any([
+                parsed_instruction == "jnz",
+                parsed_instruction == "jng",
+                parsed_instruction == "jeq",
+                parsed_instruction == "jne",
+            ]):
+            parsed_instruction.label = labels[args[0]]
             instructions.append(str(parsed_instruction))
 
         # Update label offset
