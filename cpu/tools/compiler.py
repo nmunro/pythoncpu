@@ -103,6 +103,16 @@ def compile(input, output):
             parsed_instruction.dest = args[1]
             instructions.append(str(parsed_instruction))
 
+        elif parsed_instruction == "div.b":
+            if args[0].startswith("#$"):
+                parsed_instruction.src = args[0][2:]
+
+            else:
+                parsed_instruction.src = args[0]
+
+            parsed_instruction.dest = args[1]
+            instructions.append(str(parsed_instruction))
+
         elif parsed_instruction == "halt":
             instructions.append(str(parsed_instruction))
 
