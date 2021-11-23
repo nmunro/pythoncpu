@@ -2,8 +2,8 @@ from .instruction import Instruction
 
 
 class InstructionHalt(Instruction):
-    def __init__(self):
-        super().__init__("halt", "04")
+    def __init__(self, code):
+        super().__init__("halt", code)
 
     def __str__(self):
-        return f"{str(hex(int(self.code)))[2:].zfill(2)}"
+        return self.code

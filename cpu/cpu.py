@@ -243,6 +243,40 @@ class CPU:
             for _ in instruction:
                 self.increment_program_counter()
 
+        elif instruction == "add.b":
+            instruction.src = str(self.read_vram(self.program_counter+1))
+            instruction.dest = str(self.read_vram(self.program_counter+2))
+            #total = int(instruction.src) + int(instruction.dest)
+
+            if instruction.dest.startswith(self.MEMORY_CELL_PREFIX):
+                self.write_vram(instruction.dest[2:], total)
+                self.flags.n = int(instruction.src < 0)
+                self.flags.z = int(instruction.src == 0)
+
+            elif instruction.dest.startswith(self.DATA_REGISTER_PREFIX):
+                total = int(instruction.src) + self.read_data_register(instruction.dest[1:])
+                self.write_data_register(instruction.dest[1:], total)
+                self.flags.n = int(int(instruction.src) < 0)
+                self.flags.z = int(int(instruction.src) == 0)
+
+            # Two numbers were added, total is dropped but CCR flags are changed!
+            else:
+                pass
+
+            self.flags.e = int(int(self.read_vram(instruction.src)) == int(self.read_vram(instruction.dest)))
+
+            # These flags are cleared irrespective of what happens in a move
+            self.flags.v = 0
+            self.flags.c = 0
+
+            # Move program counter forward
+            for _ in instruction:
+                self.increment_program_counter()
+
+        else:
+            exit(f"Runtime error: Unrecognised operand '{instruction.name}'")
+
+
     def halt(self):
         self.stop = True
         print("Halting and displaying machine state.")
