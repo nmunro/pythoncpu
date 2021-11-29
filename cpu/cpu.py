@@ -118,17 +118,34 @@ class CPU:
             instruction.src = str(self.read_vram(self.program_counter+1))
             instruction.dest = str(self.read_vram(self.program_counter+2))
 
-            if instruction.dest.startswith(self.MEMORY_CELL_PREFIX):
-                self.write_vram(instruction.dest[2:], instruction.src)
-                self.flags.n = int(instruction.src < 0)
-                self.flags.z = int(instruction.src == 0)
+            if instruction.src.startswith(self.DATA_REGISTER_PREFIX):
+                if instruction.dest.startswith(self.DATA_REGISTER_PREFIX):
+                    self.write_data_register(instruction.dest[1:], instruction.src[1:])
+                    self.flags.n = int(int(instruction.src[1:]) < 0)
+                    self.flags.z = int(int(instruction.src[1:]) == 0)
+                    self.flags.e = int(int(self.read_data_register(instruction.src[1:])) == int(self.read_vram(instruction.dest[1:])))
 
-            elif instruction.dest.startswith(self.DATA_REGISTER_PREFIX):
-                self.write_data_register(instruction.dest[1:], instruction.src)
-                self.flags.n = int(int(instruction.src) < 0)
-                self.flags.z = int(int(instruction.src) == 0)
+                elif instruction.dest.startswith(self.ADDRESS_REGISTER_PREFIX):
+                    pass
 
-            self.flags.e = int(int(self.read_vram(instruction.src)) == int(self.read_vram(instruction.dest)))
+                elif instruction.dest.startswith(self.MEMORY_CELL_PREFIX):
+                    pass
+
+            elif instruction.src.startswith(self.ADDRESS_REGISTER_PREFIX):
+                pass
+
+            else:
+                if instruction.dest.startswith(self.DATA_REGISTER_PREFIX):
+                    self.write_data_register(instruction.dest[1:], instruction.src)
+                    self.flags.n = int(int(instruction.src[1:]) < 0)
+                    self.flags.z = int(int(instruction.src[1:]) == 0)
+                    self.flags.e = int(int(self.read_data_register(instruction.src[1:])) == int(self.read_data_register(instruction.dest[1:])))
+
+                elif instruction.dest.startswith(self.ADDRESS_REGISTER_PREFIX):
+                    pass
+
+                elif instruction.dest.startswith(self.MEMORY_CELL_PREFIX):
+                    pass
 
             # These flags are cleared irrespective of what happens in a move
             self.flags.v = 0
@@ -246,24 +263,163 @@ class CPU:
         elif instruction == "add.b":
             instruction.src = str(self.read_vram(self.program_counter+1))
             instruction.dest = str(self.read_vram(self.program_counter+2))
-            #total = int(instruction.src) + int(instruction.dest)
 
-            if instruction.dest.startswith(self.MEMORY_CELL_PREFIX):
-                self.write_vram(instruction.dest[2:], total)
-                self.flags.n = int(instruction.src < 0)
-                self.flags.z = int(instruction.src == 0)
+            if instruction.src.startswith(self.DATA_REGISTER_PREFIX):
+                if instruction.dest.startswith(self.DATA_REGISTER_PREFIX):
+                    total = int(instruction.src) + self.read_data_register(instruction.dest[1:])
+                    self.write_data_register(instruction.dest[1:], total)
+                    self.flags.n = int(int(instruction.src) < 0)
+                    self.flags.z = int(int(instruction.src) == 0)
+                    self.flags.e = int(int(self.read_vram(instruction.src)) == int(self.read_vram(instruction.dest)))
 
-            elif instruction.dest.startswith(self.DATA_REGISTER_PREFIX):
-                total = int(instruction.src) + self.read_data_register(instruction.dest[1:])
+                elif instruction.dest.startswith(self.ADDRESS_REGISTER_PREFIX):
+                    pass
+
+                elif instruction.dest.startswith(self.MEMORY_CELL_PREFIX):
+                    pass
+
+            elif instruction.src.startswith(self.ADDRESS_REGISTER_PREFIX):
+                pass
+
+            else:
+                if instruction.dest.startswith(self.DATA_REGISTER_PREFIX):
+                    total = int(instruction.src) + self.read_data_register(instruction.dest[1:])
+                    self.write_data_register(instruction.dest[1:], total)
+                    self.flags.n = int(int(instruction.src) < 0)
+                    self.flags.z = int(int(instruction.src) == 0)
+                    self.flags.e = int(int(self.read_vram(instruction.src)) == int(self.read_vram(instruction.dest)))
+
+                elif instruction.dest.startswith(self.ADDRESS_REGISTER_PREFIX):
+                    pass
+
+                elif instruction.dest.startswith(self.MEMORY_CELL_PREFIX):
+                    pass
+
+            # These flags are cleared irrespective of what happens in a move
+            self.flags.v = 0
+            self.flags.c = 0
+
+            # Move program counter forward
+            for _ in instruction:
+                self.increment_program_counter()
+
+        elif instruction == "sub.b":
+            instruction.src = str(self.read_vram(self.program_counter+1))
+            instruction.dest = str(self.read_vram(self.program_counter+2))
+
+            if instruction.src.startswith(self.DATA_REGISTER_PREFIX) and instruction.dest.startswith(self.DATA_REGISTER_PREFIX):
+                total = self.read_data_register(instruction.dest[1:]) - int(instruction.src)
                 self.write_data_register(instruction.dest[1:], total)
                 self.flags.n = int(int(instruction.src) < 0)
                 self.flags.z = int(int(instruction.src) == 0)
+                self.flags.e = int(int(self.read_vram(instruction.src)) == int(self.read_vram(instruction.dest)))
 
-            # Two numbers were added, total is dropped but CCR flags are changed!
-            else:
+            elif instruction.src.startswith(self.DATA_REGISTER_PREFIX) and instruction.dest.startswith(self.ADDRESS_REGISTER_PREFIX):
                 pass
 
-            self.flags.e = int(int(self.read_vram(instruction.src)) == int(self.read_vram(instruction.dest)))
+            elif instruction.src.startswith(self.DATA_REGISTER_PREFIX) and instruction.dest.startswith(self.MEMORY_CELL_PREFIX):
+                pass
+
+            elif instruction.src.startswith(self.ADDRESS_REGISTER_PREFIX):
+                pass
+
+            else:
+                if instruction.dest.startswith(self.DATA_REGISTER_PREFIX):
+                    total = self.read_data_register(instruction.dest[1:]) - int(instruction.src)
+                    self.write_data_register(instruction.dest[1:], total)
+                    self.flags.n = int(int(instruction.src) < 0)
+                    self.flags.z = int(int(instruction.src) == 0)
+                    self.flags.e = int(int(self.read_vram(instruction.src)) == int(self.read_vram(instruction.dest)))
+
+                elif instruction.dest.startswith(self.ADDRESS_REGISTER_PREFIX):
+                    pass
+
+                elif instruction.dest.startswith(self.MEMORY_CELL_PREFIX):
+                    pass
+
+            # These flags are cleared irrespective of what happens in a move
+            self.flags.v = 0
+            self.flags.c = 0
+
+            # Move program counter forward
+            for _ in instruction:
+                self.increment_program_counter()
+
+        elif instruction == "mul.b":
+            instruction.src = str(self.read_vram(self.program_counter+1))
+            instruction.dest = str(self.read_vram(self.program_counter+2))
+
+            if instruction.src.startswith(self.DATA_REGISTER_PREFIX) and instruction.dest.startswith(self.DATA_REGISTER_PREFIX):
+                total = self.read_data_register(instruction.dest[1:]) * int(instruction.src)
+                self.write_data_register(instruction.dest[1:], total)
+                self.flags.n = int(int(instruction.src) < 0)
+                self.flags.z = int(int(instruction.src) == 0)
+                self.flags.e = int(int(self.read_vram(instruction.src)) == int(self.read_vram(instruction.dest)))
+
+            elif instruction.src.startswith(self.DATA_REGISTER_PREFIX) and instruction.dest.startswith(self.ADDRESS_REGISTER_PREFIX):
+                pass
+
+            elif instruction.src.startswith(self.DATA_REGISTER_PREFIX) and instruction.dest.startswith(self.MEMORY_CELL_PREFIX):
+                pass
+
+            elif instruction.src.startswith(self.ADDRESS_REGISTER_PREFIX):
+                pass
+
+            else:
+                if instruction.dest.startswith(self.DATA_REGISTER_PREFIX):
+                    total = self.read_data_register(instruction.dest[1:]) * int(instruction.src)
+                    self.write_data_register(instruction.dest[1:], total)
+                    self.flags.n = int(int(instruction.src) < 0)
+                    self.flags.z = int(int(instruction.src) == 0)
+                    self.flags.e = int(self.read_data_register(instruction.dest[1:]) == self.read_data_register(instruction.src[1:]))
+
+                elif instruction.dest.startswith(self.ADDRESS_REGISTER_PREFIX):
+                    pass
+
+                elif instruction.dest.startswith(self.MEMORY_CELL_PREFIX):
+                    pass
+
+            # These flags are cleared irrespective of what happens in a move
+            self.flags.v = 0
+            self.flags.c = 0
+
+            # Move program counter forward
+            for _ in instruction:
+                self.increment_program_counter()
+
+        elif instruction == "div.b":
+            instruction.src = str(self.read_vram(self.program_counter+1))
+            instruction.dest = str(self.read_vram(self.program_counter+2))
+
+            if instruction.src.startswith(self.DATA_REGISTER_PREFIX) and instruction.dest.startswith(self.DATA_REGISTER_PREFIX):
+                total = self.read_data_register(instruction.dest[1:]) / int(instruction.src)
+                self.write_data_register(instruction.dest[1:], total)
+                self.flags.n = int(int(instruction.src) < 0)
+                self.flags.z = int(int(instruction.src) == 0)
+                self.flags.e = int(int(self.read_vram(instruction.src)) == int(self.read_vram(instruction.dest)))
+
+            elif instruction.src.startswith(self.DATA_REGISTER_PREFIX) and instruction.dest.startswith(self.ADDRESS_REGISTER_PREFIX):
+                pass
+
+            elif instruction.src.startswith(self.DATA_REGISTER_PREFIX) and instruction.dest.startswith(self.MEMORY_CELL_PREFIX):
+                pass
+
+            elif instruction.src.startswith(self.ADDRESS_REGISTER_PREFIX):
+                pass
+
+            else:
+                if instruction.dest.startswith(self.DATA_REGISTER_PREFIX):
+                    total = self.read_data_register(instruction.dest[1:]) / int(instruction.src)
+                    self.write_data_register(instruction.dest[1:], total)
+                    self.flags.n = int(int(instruction.src) < 0)
+                    self.flags.z = int(int(instruction.src) == 0)
+                    self.flags.e = int(int(self.read_vram(instruction.src)) == int(self.read_vram(instruction.dest)))
+
+                elif instruction.dest.startswith(self.ADDRESS_REGISTER_PREFIX):
+                    pass
+
+                elif instruction.dest.startswith(self.MEMORY_CELL_PREFIX):
+                    pass
 
             # These flags are cleared irrespective of what happens in a move
             self.flags.v = 0
