@@ -43,8 +43,17 @@ def compile(input, output):
     labels = {}
     instructions = []
 
-    with Path(input).open() as f:
-        code = read_lines(f.readlines())
+    try:
+        with Path(input).open() as f:
+            code = read_lines(f.readlines())
+
+    except FileNotFoundError as ex:
+        error = [
+            f"{bcolors.FAIL}\nCompilation failed!",
+            f"Input File: '{ex.filename}' does not exist"
+        ]
+
+        exit("\n".join(error))
 
     # First pass to find labels
     try:
@@ -179,4 +188,8 @@ def compile(input, output):
 
 
 if __name__ == '__main__':
-    compile()
+    try:
+        compile()
+
+    except KeyboardInterrupt:
+        exit("Cancelled")
