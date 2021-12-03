@@ -26,7 +26,11 @@ def read_instruction(instruction):
             return label[:-1], INSTRUCTION_SET[instruction.strip()], args.split(",")
 
         case[instruction, args]:
-            return None, INSTRUCTION_SET[instruction.strip()], args.split(",")
+            if instruction.endswith(":"):
+                return instruction.strip()[:-1], INSTRUCTION_SET[args], None
+
+            else:
+                return None, INSTRUCTION_SET[instruction.strip()], args.split(",")
 
         case[instruction]:
             return None, INSTRUCTION_SET[instruction.strip()], [""]
@@ -67,6 +71,7 @@ def compile(input, output):
             offset += parsed_instruction.operands * parsed_instruction.length
 
     except KeyError as e:
+        print(instruction)
         error = [
             f"{bcolors.FAIL}\nCompilation failed!",
             f"Syntax error on line {num+1}: {e} is not a recognized instruction!{bcolors.ENDC}"
