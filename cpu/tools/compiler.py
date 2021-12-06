@@ -158,11 +158,15 @@ def compile(input, output):
         elif parsed_instruction == "cmp.b":
             if args[0].startswith("#$"):
                 parsed_instruction.src = args[0][2:].zfill(2)
-                parsed_instruction.dest = args[1][2:].zfill(2)
 
             else:
                 parsed_instruction.src = args[0]
+
+            if args[1].startswith("d") or args[1].startswith("a"):
                 parsed_instruction.dest = args[1]
+
+            else:
+                parsed_instruction.dest = args[1][2:].zfill(2)
 
             instructions.append(str(parsed_instruction))
 

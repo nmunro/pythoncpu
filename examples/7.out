@@ -1,9 +1,0 @@
-.DATA
-START: 0
-LENGTH: 4
-
-.CODE
-0705d0
-0715d1
-0ed0d1
-0d

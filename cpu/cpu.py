@@ -146,7 +146,7 @@ class CPU:
                 if instruction.dest.startswith(DATA_REGISTER_PREFIX):
                     self.flags.n = int(int(instruction.src[1:]) < 0)
                     self.flags.z = int(int(instruction.src[1:]) == 0)
-                    self.flags.e = int(int(self.read_data_register(instruction.src)) == int(self.read_data_register(instruction.dest)))
+                    self.flags.e = int(int(instruction.src) == int(self.read_data_register(instruction.dest)))
                     self.write_data_register(instruction.dest, instruction.src)
 
                 elif instruction.dest.startswith(ADDRESS_REGISTER_PREFIX):
@@ -176,7 +176,6 @@ class CPU:
         elif instruction == "jmp":
             instruction.label = str(self.read_vram(self.program_counter+1))
             self.set_program_counter(instruction.label)
-            self.flags.clear()
 
         elif instruction == "jnz":
             if not self.flags.z == 0:
@@ -187,8 +186,6 @@ class CPU:
                 for _ in instruction:
                     self.increment_program_counter()
 
-            self.flags.clear()
-
         elif instruction == "jng":
             if self.flags.n < 0:
                 instruction.label = str(self.read_vram(self.program_counter+1))
@@ -197,8 +194,6 @@ class CPU:
             else:
                 for _ in instruction:
                     self.increment_program_counter()
-
-            self.flags.clear()
 
         elif instruction == "jeq":
             if self.flags.e == 1:
@@ -209,8 +204,6 @@ class CPU:
                 for _ in instruction:
                     self.increment_program_counter()
 
-            self.flags.clear()
-
         elif instruction == "jne":
             if self.flags.e == 0:
                 instruction.label = str(self.read_vram(self.program_counter+1))
@@ -219,8 +212,6 @@ class CPU:
             else:
                 for _ in instruction:
                     self.increment_program_counter()
-
-            self.flags.clear()
 
         elif instruction == "cmp.b":
             instruction.src = str(self.read_vram(self.program_counter+1))
@@ -253,10 +244,18 @@ class CPU:
                 else:
                     result = int(instruction.dest) - self.read_address_register(instruction.src[1:])
 
-            # If dealing with both being numbers
+            # If dealing with src being a number
             else:
-                result = int(instruction.dest) - int(instruction.src)
-                self.flags.e = int(int(instruction.dest) == int(instruction.src))
+                if instruction.dest.startswith(DATA_REGISTER_PREFIX):
+                    result = int(int(self.read_data_register(instruction.dest)) - int(instruction.src))
+                    self.flags.e = int(int(self.read_data_register(instruction.dest)) == int(instruction.src))
+
+                elif instruction.dest.startswith(ADDRESS_REGISTER_PREFIX):
+                    pass
+
+                else:
+                    result = int(instruction.dest) - int(instruction.src)
+                    self.flags.e = int(int(instruction.dest) == int(instruction.src))
 
             # set ccr flags
             self.flags.n = int(result < 0)
