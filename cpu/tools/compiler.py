@@ -107,6 +107,10 @@ def compile(input, output):
             parsed_instruction.dest = args[1]
             instructions.append(str(parsed_instruction))
 
+        elif parsed_instruction == "inc":
+            parsed_instruction.dest = args[0]
+            instructions.append(str(parsed_instruction))
+
         elif parsed_instruction == "sub.b":
             if args[0].startswith("#$"):
                 parsed_instruction.src = args[0][2:]
@@ -115,6 +119,10 @@ def compile(input, output):
                 parsed_instruction.src = args[0]
 
             parsed_instruction.dest = args[1]
+            instructions.append(str(parsed_instruction))
+
+        elif parsed_instruction == "dec":
+            parsed_instruction.dest = args[0]
             instructions.append(str(parsed_instruction))
 
         elif parsed_instruction == "div.b":

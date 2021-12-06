@@ -309,6 +309,30 @@ class CPU:
             for _ in instruction:
                 self.increment_program_counter()
 
+        elif instruction == "inc":
+            instruction.dest = str(self.read_vram(self.program_counter+1))
+
+            # Data register
+            if instruction.dest.startswith(DATA_REGISTER_PREFIX):
+                origin = self.read_data_register(instruction.dest)
+                self.write_data_register(instruction.dest, origin+1)
+
+            # Address register
+            elif instruction.dest.startswith(DATA_REGISTER_PREFIX):
+                origin = self.read_address_register(instruction.dest)
+                self.write_address_register(instruction.dest, origin+1)
+
+            # Numbers, doesn't do anything except change CCRs
+            else:
+                origin = instruction.dest
+
+            self.flags.z = int(int(origin+1) == 0)
+            self.flags.e = int(origin == origin+1)
+            self.flags.n = int(int(origin+1) < 0)
+
+            for _ in instruction:
+                self.increment_program_counter()
+
         elif instruction == "sub.b":
             instruction.src = str(self.read_vram(self.program_counter+1))
             instruction.dest = str(self.read_vram(self.program_counter+2))
@@ -347,6 +371,30 @@ class CPU:
             self.flags.c = 0
 
             # Move program counter forward
+            for _ in instruction:
+                self.increment_program_counter()
+
+        elif instruction == "dec":
+            instruction.dest = str(self.read_vram(self.program_counter+1))
+
+            # Data register
+            if instruction.dest.startswith(DATA_REGISTER_PREFIX):
+                origin = self.read_data_register(instruction.dest)
+                self.write_data_register(instruction.dest, origin-1)
+
+            # Address register
+            elif instruction.dest.startswith(DATA_REGISTER_PREFIX):
+                origin = self.read_address_register(instruction.dest)
+                self.write_address_register(instruction.dest, origin-1)
+
+            # Numbers, doesn't do anything except change CCRs
+            else:
+                origin = instruction.dest
+
+            self.flags.z = int(int(origin+1) == 0)
+            self.flags.e = int(origin == origin-1)
+            self.flags.n = int(int(origin+1) < 0)
+
             for _ in instruction:
                 self.increment_program_counter()
 
