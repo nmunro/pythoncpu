@@ -2,5 +2,5 @@ from .instruction import Instruction
 
 
 class InstructionNoOp(Instruction):
-    def __init__(self):
-        super().__init__("noop", "00")
+    def __init__(self, code):
+        super().__init__("noop", code)

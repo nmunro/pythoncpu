@@ -26,7 +26,11 @@ def read_instruction(instruction):
             return label[:-1], INSTRUCTION_SET[instruction.strip()], args.split(",")
 
         case[instruction, args]:
-            return None, INSTRUCTION_SET[instruction.strip()], args.split(",")
+            if instruction.endswith(":"):
+                return instruction.strip()[:-1], INSTRUCTION_SET[args], None
+
+            else:
+                return None, INSTRUCTION_SET[instruction.strip()], args.split(",")
 
         case[instruction]:
             return None, INSTRUCTION_SET[instruction.strip()], [""]
@@ -43,8 +47,17 @@ def compile(input, output):
     labels = {}
     instructions = []
 
-    with Path(input).open() as f:
-        code = read_lines(f.readlines())
+    try:
+        with Path(input).open() as f:
+            code = read_lines(f.readlines())
+
+    except FileNotFoundError as ex:
+        error = [
+            f"{bcolors.FAIL}\nCompilation failed!",
+            f"Input File: '{ex.filename}' does not exist"
+        ]
+
+        exit("\n".join(error))
 
     # First pass to find labels
     try:
@@ -58,6 +71,7 @@ def compile(input, output):
             offset += parsed_instruction.operands * parsed_instruction.length
 
     except KeyError as e:
+        print(instruction)
         error = [
             f"{bcolors.FAIL}\nCompilation failed!",
             f"Syntax error on line {num+1}: {e} is not a recognized instruction!{bcolors.ENDC}"
@@ -74,6 +88,54 @@ def compile(input, output):
         label, parsed_instruction, args = read_instruction(instruction)
 
         if parsed_instruction == "move.b":
+            if args[0].startswith("#$"):
+                parsed_instruction.src = args[0][2:]
+
+            else:
+                parsed_instruction.src = args[0]
+
+            parsed_instruction.dest = args[1]
+            instructions.append(str(parsed_instruction))
+
+        elif parsed_instruction == "add.b":
+            if args[0].startswith("#$"):
+                parsed_instruction.src = args[0][2:]
+
+            else:
+                parsed_instruction.src = args[0]
+
+            parsed_instruction.dest = args[1]
+            instructions.append(str(parsed_instruction))
+
+        elif parsed_instruction == "inc":
+            parsed_instruction.dest = args[0]
+            instructions.append(str(parsed_instruction))
+
+        elif parsed_instruction == "sub.b":
+            if args[0].startswith("#$"):
+                parsed_instruction.src = args[0][2:]
+
+            else:
+                parsed_instruction.src = args[0]
+
+            parsed_instruction.dest = args[1]
+            instructions.append(str(parsed_instruction))
+
+        elif parsed_instruction == "dec":
+            parsed_instruction.dest = args[0]
+            instructions.append(str(parsed_instruction))
+
+        elif parsed_instruction == "div.b":
+            if args[0].startswith("#$"):
+                parsed_instruction.src = args[0][2:]
+
+            else:
+                parsed_instruction.src = args[0]
+
+            parsed_instruction.dest = args[1]
+            instructions.append(str(parsed_instruction))
+
+        elif parsed_instruction == "mul.b":
             if args[0].startswith("#$"):
                 parsed_instruction.src = args[0][2:]
 
@@ -104,11 +166,15 @@ def compile(input, output):
         elif parsed_instruction == "cmp.b":
             if args[0].startswith("#$"):
                 parsed_instruction.src = args[0][2:].zfill(2)
-                parsed_instruction.dest = args[1][2:].zfill(2)
 
             else:
                 parsed_instruction.src = args[0]
+
+            if args[1].startswith("d") or args[1].startswith("a"):
                 parsed_instruction.dest = args[1]
+
+            else:
+                parsed_instruction.dest = args[1][2:].zfill(2)
 
             instructions.append(str(parsed_instruction))
 
@@ -139,4 +205,8 @@ def compile(input, output):
 
 
 if __name__ == '__main__':
-    compile()
+    try:
+        compile()
+
+    except KeyboardInterrupt:
+        exit("Cancelled")

@@ -1,0 +1,6 @@
+start: move.b #$10,d0
+loop:  cmp.b #$0,d0
+       jeq quit
+       sub.b #$1,d0
+       jmp loop
+quit:  halt

@@ -1,0 +1,3 @@
+start: move.b #$10,d0
+       div.b #$2,d0
+       halt

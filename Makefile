@@ -1,6 +1,9 @@
 .PHONY: env run test lint requires docs compile
 .DEFAULT: env
 
+FILES = `find examples -type f -name '*.bin'`
+BUILDS = `find examples -type f -name '*.out'`
+
 env:
 	@python -m venv .venv
 	@poetry install
@@ -23,3 +26,9 @@ docs:
 
 compile:
 	@poetry run python cpu/tools/compiler.py --input $(INPUT) --output $(OUTPUT)
+
+compile-all:
+	@for file in $(FILES); do make compile INPUT=$$file OUTPUT=$$file.out; done
+
+clean:
+	@for file in $(BUILDS); do rm $$file; done

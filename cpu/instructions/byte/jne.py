@@ -2,8 +2,8 @@ from .instruction import Instruction
 
 
 class InstructionJNE(Instruction):
-    def __init__(self):
-        super().__init__("jne", "0a")
+    def __init__(self, code):
+        super().__init__("jne", code)
         self._label = ""
         self.operands = 2
 

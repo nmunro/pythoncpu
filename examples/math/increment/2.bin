@@ -1,0 +1,7 @@
+start: move.b #$0,d0
+       inc d0
+       inc d0
+       inc d0
+       inc d0
+       inc d0
+       halt

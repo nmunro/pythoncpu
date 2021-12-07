@@ -1,0 +1,3 @@
+start: move.b #$5,d0
+       add.b  #$5,d0
+       halt

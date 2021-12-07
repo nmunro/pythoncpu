@@ -2,8 +2,8 @@ from .instruction import Instruction
 
 
 class InstructionJNG(Instruction):
-    def __init__(self):
-        super().__init__("jng", "08")
+    def __init__(self, code):
+        super().__init__("jng", code)
         self._label = ""
         self.operands = 2
 
@@ -16,4 +16,4 @@ class InstructionJNG(Instruction):
         self._label = f"{label}".zfill(2)
 
     def __str__(self):
-        return f"{str(hex(int(self.code)))[2:].zfill(2)}{self.label}"
+        return f"{self.code}{self.label}"
