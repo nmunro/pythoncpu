@@ -105,11 +105,19 @@ class CPU:
         except ValueError:
             return self.data_registers[int(location[1:])].value
 
-    def write_address_register(self, location_value):
-        self.address_registers[int(location)].value = int(value)
+    def write_address_register(self, location, value):
+        try:
+            self.address_registers[int(location)].value = int(value)
+
+        except ValueError:
+            self.address_registers[int(location[1:])].value = int(value)
 
     def read_address_register(self, location):
-        return self.address_registers[int(location)].value
+        try:
+            return self.address_registers[int(location)].value
+
+        except ValueError:
+            return self.address_registers[int(location[1:])].value
 
     def write_vram(self, location, value):
         if value.startswith(DECIMAL_NUMBER_PREFIX):
@@ -150,7 +158,10 @@ class CPU:
                     self.write_data_register(instruction.dest, instruction.src)
 
                 elif instruction.dest.startswith(ADDRESS_REGISTER_PREFIX):
-                    pass
+                    self.flags.n = int(int(instruction.src[1:]) < 0)
+                    self.flags.z = int(int(instruction.src[1:]) == 0)
+                    self.flags.e = int(int(instruction.src) == int(self.read_address_register(instruction.dest[1:])))
+                    self.write_address_register(instruction.dest, instruction.src[1:])
 
                 elif instruction.dest.startswith(MEMORY_CELL_PREFIX):
                     pass

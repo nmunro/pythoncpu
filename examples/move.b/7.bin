@@ -1,0 +1,8 @@
+start: move.b #$1,a0
+       move.b #$2,a1
+       move.b #$3,a2
+       move.b #$4,a3
+       move.b #$5,a4
+       move.b #$6,a5
+       move.b #$7,a6
+       halt
