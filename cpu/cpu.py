@@ -136,13 +136,16 @@ class CPU:
 
             if instruction.src.startswith(DATA_REGISTER_PREFIX):
                 if instruction.dest.startswith(DATA_REGISTER_PREFIX):
-                    self.flags.n = int(int(instruction.src[1:]) < 0)
-                    self.flags.z = int(int(instruction.src[1:]) == 0)
-                    self.flags.e = int(int(self.read_data_register(instruction.src)) == int(self.read_vram(instruction.dest[1:])))
-                    self.write_data_register(instruction.dest, instruction.src[1:])
+                    self.write_data_register(instruction.dest, instruction.src)
+                    self.flags.n = int(int(self.read_data_register(instruction.src)) < 0)
+                    self.flags.z = int(int(self.read_data_register(instruction.src)) == 0)
+                    self.flags.e = int(int(self.read_data_register(instruction.src)) == int(self.read_data_register(instruction.dest)))
 
                 elif instruction.dest.startswith(ADDRESS_REGISTER_PREFIX):
-                    pass
+                    self.write_address_register(instruction.dest, self.read_data_register(instruction.src))
+                    self.flags.n = int(int(self.read_address_register(instruction.src)) < 0)
+                    self.flags.z = int(int(self.read_address_register(instruction.src)) == 0)
+                    self.flags.e = int(int(self.read_data_register(instruction.src)) == int(self.read_address_register(instruction.dest)))
 
                 elif instruction.dest.startswith(MEMORY_CELL_PREFIX):
                     pass
@@ -152,16 +155,16 @@ class CPU:
 
             else:
                 if instruction.dest.startswith(DATA_REGISTER_PREFIX):
+                    self.write_data_register(instruction.dest, instruction.src)
                     self.flags.n = int(int(instruction.src[1:]) < 0)
                     self.flags.z = int(int(instruction.src[1:]) == 0)
                     self.flags.e = int(int(instruction.src) == int(self.read_data_register(instruction.dest)))
-                    self.write_data_register(instruction.dest, instruction.src)
 
                 elif instruction.dest.startswith(ADDRESS_REGISTER_PREFIX):
+                    self.write_address_register(instruction.dest, instruction.src[1:])
                     self.flags.n = int(int(instruction.src[1:]) < 0)
                     self.flags.z = int(int(instruction.src[1:]) == 0)
-                    self.flags.e = int(int(instruction.src) == int(self.read_address_register(instruction.dest[1:])))
-                    self.write_address_register(instruction.dest, instruction.src[1:])
+                    self.flags.e = int(int(instruction.src) == int(self.read_address_register(instruction.dest)))
 
                 elif instruction.dest.startswith(MEMORY_CELL_PREFIX):
                     pass
@@ -285,10 +288,10 @@ class CPU:
             if instruction.src.startswith(DATA_REGISTER_PREFIX):
                 if instruction.dest.startswith(DATA_REGISTER_PREFIX):
                     total = int(instruction.src) + self.read_data_register(instruction.dest)
+                    self.write_data_register(instruction.dest, total)
                     self.flags.n = int(total < 0)
                     self.flags.z = int(total == 0)
                     self.flags.e = int(int(self.read_vram(instruction.src)) == int(self.read_vram(instruction.dest)))
-                    self.write_data_register(instruction.dest, total)
 
                 elif instruction.dest.startswith(ADDRESS_REGISTER_PREFIX):
                     pass
@@ -302,10 +305,10 @@ class CPU:
             else:
                 if instruction.dest.startswith(DATA_REGISTER_PREFIX):
                     total = int(instruction.src) + self.read_data_register(instruction.dest)
+                    self.write_data_register(instruction.dest, total)
                     self.flags.n = int(total < 0)
                     self.flags.z = int(total == 0)
                     self.flags.e = int(int(instruction.src) == int(self.read_data_register(instruction.dest)))
-                    self.write_data_register(instruction.dest, total)
 
                 elif instruction.dest.startswith(ADDRESS_REGISTER_PREFIX):
                     pass
@@ -350,10 +353,10 @@ class CPU:
 
             if instruction.src.startswith(DATA_REGISTER_PREFIX) and instruction.dest.startswith(DATA_REGISTER_PREFIX):
                 total = self.read_data_register(instruction.dest) - int(instruction.src)
+                self.write_data_register(instruction.dest, total)
                 self.flags.n = int(total < 0)
                 self.flags.z = int(total == 0)
                 self.flags.e = int(int(self.read_vram(instruction.src)) == int(self.read_vram(instruction.dest)))
-                self.write_data_register(instruction.dest, total)
 
             elif instruction.src.startswith(DATA_REGISTER_PREFIX) and instruction.dest.startswith(ADDRESS_REGISTER_PREFIX):
                 pass
@@ -367,10 +370,10 @@ class CPU:
             else:
                 if instruction.dest.startswith(DATA_REGISTER_PREFIX):
                     total = self.read_data_register(instruction.dest) - int(instruction.src)
+                    self.write_data_register(instruction.dest, total)
                     self.flags.n = int(total < 0)
                     self.flags.z = int(total == 0)
                     self.flags.e = int(int(instruction.src) == int(self.read_data_register(instruction.dest)))
-                    self.write_data_register(instruction.dest, total)
 
                 elif instruction.dest.startswith(ADDRESS_REGISTER_PREFIX):
                     pass
@@ -415,10 +418,10 @@ class CPU:
 
             if instruction.src.startswith(DATA_REGISTER_PREFIX) and instruction.dest.startswith(DATA_REGISTER_PREFIX):
                 total = self.read_data_register(instruction.dest) * int(instruction.src)
+                self.write_data_register(instruction.dest, total)
                 self.flags.n = int(int(instruction.src) < 0)
                 self.flags.z = int(int(instruction.src) == 0)
                 self.flags.e = int(int(self.read_vram(instruction.src)) == int(self.read_vram(instruction.dest)))
-                self.write_data_register(instruction.dest, total)
 
             elif instruction.src.startswith(DATA_REGISTER_PREFIX) and instruction.dest.startswith(ADDRESS_REGISTER_PREFIX):
                 pass
@@ -432,10 +435,10 @@ class CPU:
             else:
                 if instruction.dest.startswith(DATA_REGISTER_PREFIX):
                     total = self.read_data_register(instruction.dest) * int(instruction.src)
+                    self.write_data_register(instruction.dest, total)
                     self.flags.n = int(int(instruction.src) < 0)
                     self.flags.z = int(int(instruction.src) == 0)
                     self.flags.e = int(self.read_data_register(instruction.dest) == self.read_data_register(instruction.src))
-                    self.write_data_register(instruction.dest, total)
 
                 elif instruction.dest.startswith(ADDRESS_REGISTER_PREFIX):
                     pass
@@ -456,10 +459,10 @@ class CPU:
 
             if instruction.src.startswith(DATA_REGISTER_PREFIX) and instruction.dest.startswith(DATA_REGISTER_PREFIX):
                 total = self.read_data_register(instruction.dest) / int(instruction.src)
+                self.write_data_register(instruction.dest, total)
                 self.flags.n = int(int(instruction.src) < 0)
                 self.flags.z = int(int(instruction.src) == 0)
                 self.flags.e = int(int(self.read_vram(instruction.src)) == int(self.read_vram(instruction.dest)))
-                self.write_data_register(instruction.dest, total)
 
             elif instruction.src.startswith(DATA_REGISTER_PREFIX) and instruction.dest.startswith(ADDRESS_REGISTER_PREFIX):
                 pass
@@ -473,10 +476,10 @@ class CPU:
             else:
                 if instruction.dest.startswith(DATA_REGISTER_PREFIX):
                     total = self.read_data_register(instruction.dest) / int(instruction.src)
+                    self.write_data_register(instruction.dest, total)
                     self.flags.n = int(int(instruction.src) < 0)
                     self.flags.z = int(int(instruction.src) == 0)
                     self.flags.e = int(self.read_data_register(instruction.dest) == self.read_data_register(instruction.src))
-                    self.write_data_register(instruction.dest, total)
 
                 elif instruction.dest.startswith(ADDRESS_REGISTER_PREFIX):
                     pass
