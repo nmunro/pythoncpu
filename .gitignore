@@ -174,3 +174,4 @@ cython_debug/
 
 # Extra lines needed for Flint
 coverage
+*.out

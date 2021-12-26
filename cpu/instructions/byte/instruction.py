@@ -5,6 +5,8 @@ class Instruction:
         self.operands = 1
         self.length = 1
         self.loop_count = 0
+        self.src_type = None
+        self.dest_type = None
 
     def __len__(self):
         return self.operands

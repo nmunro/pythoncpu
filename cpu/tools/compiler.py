@@ -1,3 +1,4 @@
+from enum import Enum
 from pathlib import Path
 from cpu.instructions import InstructionSet
 
@@ -5,6 +6,15 @@ import click
 
 
 INSTRUCTION_SET = InstructionSet()
+
+
+class Types(Enum):
+    DATA_REGISTER = 0
+    ADDRESS_REGISTER = 1
+    MEMORY_LOCATION = 2
+    NUMBER = 3
+    LABEL = 4
+
 
 class bcolors:
     HEADER = "\033[95m"
@@ -34,6 +44,20 @@ def read_instruction(instruction):
 
         case[instruction]:
             return None, INSTRUCTION_SET[instruction.strip()], [""]
+
+
+def determine_operand_type(src):
+    if src.startswith("#$"):
+        return Types.NUMBER
+
+    elif src.startswith("0x"):
+        return Types.MEMORY_LOCATION
+
+    elif src.startswith("a"):
+        return Types.ADDRESS_REGISTER
+
+    elif src.startswith("d"):
+        return Types.DATA_REGISTER
 
 
 @click.command()
@@ -87,62 +111,39 @@ def compile(input, output):
         print("\r", f"Linking {str(num).zfill(len(str(len(code))))}/{len(code)}...", end="")
         label, parsed_instruction, args = read_instruction(instruction)
 
-        if parsed_instruction == "move.b":
-            if args[0].startswith("#$"):
-                parsed_instruction.src = args[0][2:]
+        if any([
+                parsed_instruction == "move.b",
+                parsed_instruction == "add.b",
+                parsed_instruction == "sub.b",
+                parsed_instruction == "div.b",
+                parsed_instruction == "mul.b",
+        ]):
+            parsed_instruction.src_type = determine_operand_type(args[0])
+            parsed_instruction.dest_type = determine_operand_type(args[1])
+
+            if parsed_instruction.src_type == Types.DATA_REGISTER or parsed_instruction.src_type == Types.ADDRESS_REGISTER:
+                parsed_instruction.src = args[0][1:]
 
             else:
-                parsed_instruction.src = args[0]
-
-            parsed_instruction.dest = args[1]
-            instructions.append(str(parsed_instruction))
-
-        elif parsed_instruction == "add.b":
-            if args[0].startswith("#$"):
                 parsed_instruction.src = args[0][2:]
 
-            else:
-                parsed_instruction.src = args[0]
-
-            parsed_instruction.dest = args[1]
-            instructions.append(str(parsed_instruction))
-
-        elif parsed_instruction == "inc":
-            parsed_instruction.dest = args[0]
-            instructions.append(str(parsed_instruction))
-
-        elif parsed_instruction == "sub.b":
-            if args[0].startswith("#$"):
-                parsed_instruction.src = args[0][2:]
+            if parsed_instruction.dest_type == Types.DATA_REGISTER or parsed_instruction.dest_type == Types.ADDRESS_REGISTER:
+                parsed_instruction.dest = args[1]
 
             else:
-                parsed_instruction.src = args[0]
+                parsed_instruction.dest = args[1][2:]
 
-            parsed_instruction.dest = args[1]
             instructions.append(str(parsed_instruction))
 
-        elif parsed_instruction == "dec":
-            parsed_instruction.dest = args[0]
-            instructions.append(str(parsed_instruction))
+        elif parsed_instruction == "inc" or parsed_instruction == "dec":
+            parsed_instruction.dest_type = args[0]
 
-        elif parsed_instruction == "div.b":
-            if args[0].startswith("#$"):
-                parsed_instruction.src = args[0][2:]
+            if parsed_instruction.dest_type == Types.DATA_REGISTER or parsed_instruction.dest_type == Types.ADDRESS_REGISTER:
+                parsed_instruction.dest = args[0][1:]
 
             else:
-                parsed_instruction.src = args[0]
+                parsed_instruction.dest = args[0][2:]
 
-            parsed_instruction.dest = args[1]
-            instructions.append(str(parsed_instruction))
-
-        elif parsed_instruction == "mul.b":
-            if args[0].startswith("#$"):
-                parsed_instruction.src = args[0][2:]
-
-            else:
-                parsed_instruction.src = args[0]
-
-            parsed_instruction.dest = args[1]
             instructions.append(str(parsed_instruction))
 
         elif parsed_instruction == "halt":
@@ -153,7 +154,8 @@ def compile(input, output):
 
         elif parsed_instruction == "jmp":
             try:
-                parsed_instruction.label = labels[args[0]]
+                parsed_instruction.dest = labels[args[0]]
+                parsed_instruction.dest_type = Types.LABEL
                 instructions.append(str(parsed_instruction))
 
             except KeyError as e:
@@ -164,13 +166,16 @@ def compile(input, output):
                 exit("\n".join(error))
 
         elif parsed_instruction == "cmp.b":
-            if args[0].startswith("#$"):
+            parsed_instruction.src_type = determine_operand_type(args[0])
+            parsed_instruction.dest_type = determine_operand_type(args[1])
+
+            if parsed_instruction.src_type == Types.NUMBER:
                 parsed_instruction.src = args[0][2:].zfill(2)
 
             else:
                 parsed_instruction.src = args[0]
 
-            if args[1].startswith("d") or args[1].startswith("a"):
+            if parsed_instruction.dest_type == Types.DATA_REGISTER or parsed_instruction.dest_type == Types.ADDRESS_REGISTER:
                 parsed_instruction.dest = args[1]
 
             else:
@@ -185,6 +190,7 @@ def compile(input, output):
                 parsed_instruction == "jne",
             ]):
             parsed_instruction.label = labels[args[0]]
+            parsed_instruction.dest_type = Types.LABEL
             instructions.append(str(parsed_instruction))
 
         # Update label offset
