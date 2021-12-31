@@ -2,14 +2,22 @@ class Instruction:
     def __init__(self, name, code):
         self.name = name.lower()
         self.code = f"{code}".zfill(2)
-        self.operands = 1
         self.length = 1
         self.loop_count = 0
         self.src_type = None
+        self.src = None
         self.dest_type = None
+        self.dest = None
 
     def __len__(self):
-        return self.operands
+        if self.src and self.dest:
+            return 5
+
+        elif self.dest:
+            return 3
+
+        else:
+            return 1
 
     def __index__(self):
         return int(self)
@@ -37,7 +45,7 @@ class Instruction:
         return self
 
     def __next__(self):
-        if self.loop_count < self.operands:
+        if self.loop_count < len(self):
             result = self.loop_count
             self.loop_count += 1
             return result

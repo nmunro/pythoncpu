@@ -92,7 +92,7 @@ def compile(input, output):
             if label:
                 labels[label] = offset
 
-            offset += parsed_instruction.operands * parsed_instruction.length
+            offset += len(parsed_instruction) * parsed_instruction.length
 
     except KeyError as e:
         print(instruction)

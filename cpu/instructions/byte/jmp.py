@@ -5,7 +5,6 @@ class InstructionJmp(Instruction):
     def __init__(self, code):
         super().__init__("jmp", code)
         self._dest = ""
-        self.operands = 2
 
     @property
     def dest(self):
