@@ -81,7 +81,8 @@ class CPU:
         while not self.stop:
             try:
                 # This will need to read the PC and load an instruction from memory
-                self.execute_instruction(self.fetch_instruction())
+                instruction = self.fetch_instruction()
+                self.execute_instruction(instruction)
                 time.sleep(self.clock.tick)
 
             except IndexError as e:
@@ -123,8 +124,10 @@ class CPU:
 
     def execute_instruction(self, instruction):
         if instruction == "move.b":
-            instruction.src = str(self.read_vram(self.program_counter+1))
-            instruction.dest = str(self.read_vram(self.program_counter+2))
+            instruction.src_type = str(self.read_vram(self.program_counter+1))
+            instruction.src = str(self.read_vram(self.program_counter+2))
+            instruction.dest_type = str(self.read_vram(self.program_counter+3))
+            instruction.dest = str(self.read_vram(self.program_counter+4))
 
             if instruction.src.startswith(DATA_REGISTER_PREFIX):
                 if instruction.dest.startswith(DATA_REGISTER_PREFIX):
@@ -174,13 +177,15 @@ class CPU:
             self.flags.clear()
 
         elif instruction == "jmp":
-            instruction.label = str(self.read_vram(self.program_counter+1))
-            self.set_program_counter(instruction.label)
+            instruction.dest_type = str(self.read_vram(self.program_counter+1))
+            instruction.dest = str(self.read_vram(self.program_counter+2))
+            self.set_program_counter(instruction.dest)
 
         elif instruction == "jnz":
             if not self.flags.z == 0:
-                instruction.label = str(self.read_vram(self.program_counter+1))
-                self.set_program_counter(instruction.label)
+                instruction.dest_type = str(self.read_vram(self.program_counter+1))
+                instruction.dest = str(self.read_vram(self.program_counter+2))
+                self.set_program_counter(instruction.dest)
 
             else:
                 for _ in instruction:
@@ -188,8 +193,9 @@ class CPU:
 
         elif instruction == "jng":
             if self.flags.n < 0:
-                instruction.label = str(self.read_vram(self.program_counter+1))
-                self.set_program_counter(instruction.label)
+                instruction.dest_type = str(self.read_vram(self.program_counter+1))
+                instruction.dest = str(self.read_vram(self.program_counter+2))
+                self.set_program_counter(instruction.dest)
 
             else:
                 for _ in instruction:
@@ -197,8 +203,9 @@ class CPU:
 
         elif instruction == "jeq":
             if self.flags.e == 1:
-                instruction.label = str(self.read_vram(self.program_counter+1))
-                self.set_program_counter(instruction.label)
+                instruction.dest_type = str(self.read_vram(self.program_counter+1))
+                instruction.dest = str(self.read_vram(self.program_counter+2))
+                self.set_program_counter(instruction.dest)
 
             else:
                 for _ in instruction:
@@ -206,16 +213,19 @@ class CPU:
 
         elif instruction == "jne":
             if self.flags.e == 0:
-                instruction.label = str(self.read_vram(self.program_counter+1))
-                self.set_program_counter(instruction.label)
+                instruction.dest_type = str(self.read_vram(self.program_counter+1))
+                instruction.dest = str(self.read_vram(self.program_counter+2))
+                self.set_program_counter(instruction.dest)
 
             else:
                 for _ in instruction:
                     self.increment_program_counter()
 
         elif instruction == "cmp.b":
-            instruction.src = str(self.read_vram(self.program_counter+1))
-            instruction.dest = str(self.read_vram(self.program_counter+2))
+            instruction.src_type = str(self.read_vram(self.program_counter+1))
+            instruction.src = str(self.read_vram(self.program_counter+2))
+            instruction.dest_type = str(self.read_vram(self.program_counter+3))
+            instruction.dest = str(self.read_vram(self.program_counter+4))
             result = 0
 
             # If dealing with src data registers
@@ -268,8 +278,10 @@ class CPU:
                 self.increment_program_counter()
 
         elif instruction == "add.b":
-            instruction.src = str(self.read_vram(self.program_counter+1))
-            instruction.dest = str(self.read_vram(self.program_counter+2))
+            instruction.src_type = str(self.read_vram(self.program_counter+1))
+            instruction.src = str(self.read_vram(self.program_counter+2))
+            instruction.dest_type = str(self.read_vram(self.program_counter+3))
+            instruction.dest = str(self.read_vram(self.program_counter+4))
 
             if instruction.src.startswith(DATA_REGISTER_PREFIX):
                 if instruction.dest.startswith(DATA_REGISTER_PREFIX):
@@ -310,7 +322,8 @@ class CPU:
                 self.increment_program_counter()
 
         elif instruction == "inc":
-            instruction.dest = str(self.read_vram(self.program_counter+1))
+            instruction.dest_type = str(self.read_vram(self.program_counter+1))
+            instruction.dest = str(self.read_vram(self.program_counter+2))
 
             # Data register
             if instruction.dest.startswith(DATA_REGISTER_PREFIX):
@@ -334,8 +347,10 @@ class CPU:
                 self.increment_program_counter()
 
         elif instruction == "sub.b":
-            instruction.src = str(self.read_vram(self.program_counter+1))
-            instruction.dest = str(self.read_vram(self.program_counter+2))
+            instruction.src_type = str(self.read_vram(self.program_counter+1))
+            instruction.src = str(self.read_vram(self.program_counter+2))
+            instruction.dest_type = str(self.read_vram(self.program_counter+3))
+            instruction.dest = str(self.read_vram(self.program_counter+4))
 
             if instruction.src.startswith(DATA_REGISTER_PREFIX) and instruction.dest.startswith(DATA_REGISTER_PREFIX):
                 total = self.read_data_register(instruction.dest) - int(instruction.src)
@@ -375,7 +390,8 @@ class CPU:
                 self.increment_program_counter()
 
         elif instruction == "dec":
-            instruction.dest = str(self.read_vram(self.program_counter+1))
+            instruction.dest_type = str(self.read_vram(self.program_counter+1))
+            instruction.dest = str(self.read_vram(self.program_counter+2))
 
             # Data register
             if instruction.dest.startswith(DATA_REGISTER_PREFIX):
@@ -399,8 +415,10 @@ class CPU:
                 self.increment_program_counter()
 
         elif instruction == "mul.b":
-            instruction.src = str(self.read_vram(self.program_counter+1))
-            instruction.dest = str(self.read_vram(self.program_counter+2))
+            instruction.src_type = str(self.read_vram(self.program_counter+1))
+            instruction.src = str(self.read_vram(self.program_counter+2))
+            instruction.dest_type = str(self.read_vram(self.program_counter+3))
+            instruction.dest = str(self.read_vram(self.program_counter+4))
 
             if instruction.src.startswith(DATA_REGISTER_PREFIX) and instruction.dest.startswith(DATA_REGISTER_PREFIX):
                 total = self.read_data_register(instruction.dest) * int(instruction.src)
@@ -440,8 +458,10 @@ class CPU:
                 self.increment_program_counter()
 
         elif instruction == "div.b":
-            instruction.src = str(self.read_vram(self.program_counter+1))
-            instruction.dest = str(self.read_vram(self.program_counter+2))
+            instruction.src_type = str(self.read_vram(self.program_counter+1))
+            instruction.src = str(self.read_vram(self.program_counter+2))
+            instruction.dest_type = str(self.read_vram(self.program_counter+3))
+            instruction.dest = str(self.read_vram(self.program_counter+4))
 
             if instruction.src.startswith(DATA_REGISTER_PREFIX) and instruction.dest.startswith(DATA_REGISTER_PREFIX):
                 total = self.read_data_register(instruction.dest) / int(instruction.src)
