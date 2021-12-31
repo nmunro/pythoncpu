@@ -15,4 +15,4 @@ class InstructionJmp(Instruction):
         self._dest = f"{dest}".zfill(2)
 
     def __str__(self):
-        return f"{self.code}{self.dest}"
+        return f"{self.code}{self.dest_type}{self.dest}"
