@@ -9,16 +9,6 @@ class Instruction:
         self.dest_type = None
         self.dest = None
 
-    def __len__(self):
-        if self.src and self.dest:
-            return 5
-
-        elif self.dest:
-            return 3
-
-        else:
-            return 1
-
     def __index__(self):
         return int(self)
 

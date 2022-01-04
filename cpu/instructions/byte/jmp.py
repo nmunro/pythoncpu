@@ -14,5 +14,8 @@ class InstructionJmp(Instruction):
     def dest(self, dest):
         self._dest = f"{dest}".zfill(2)
 
+    def __len__(self):
+        return 3
+
     def __str__(self):
         return f"{self.code}{self.dest_type}{self.dest}"

@@ -67,8 +67,8 @@ class CPU:
         print("\r", f"Loading instruction {length}/{length}... Done!")
         self.start = start
 
-    def increment_program_counter(self):
-        self.program_counter += 1
+    def increment_program_counter(self, instruction):
+        self.program_counter += len(instruction)
 
     def set_program_counter(self, location):
         self.program_counter = int(location)
@@ -163,17 +163,14 @@ class CPU:
             self.flags.c = 0
 
             # Move program counter forward
-            for _ in instruction:
-                self.increment_program_counter()
+            self.increment_program_counter(instruction)
 
         elif instruction == "halt":
             # Set the global stop to the fetch/execute cycle can halt
             self.stop = True
 
         elif instruction == "noop":
-            for _ in instruction:
-                self.increment_program_counter()
-
+            self.increment_program_counter(instruction)
             self.flags.clear()
 
         elif instruction == "jmp":
@@ -188,8 +185,7 @@ class CPU:
                 self.set_program_counter(instruction.dest)
 
             else:
-                for _ in instruction:
-                    self.increment_program_counter()
+                self.increment_program_counter(instruction)
 
         elif instruction == "jng":
             if self.flags.n < 0:
@@ -198,8 +194,7 @@ class CPU:
                 self.set_program_counter(instruction.dest)
 
             else:
-                for _ in instruction:
-                    self.increment_program_counter()
+                self.increment_program_counter(instruction)
 
         elif instruction == "jeq":
             if self.flags.e == 1:
@@ -208,8 +203,7 @@ class CPU:
                 self.set_program_counter(instruction.dest)
 
             else:
-                for _ in instruction:
-                    self.increment_program_counter()
+                self.increment_program_counter(instruction)
 
         elif instruction == "jne":
             if self.flags.e == 0:
@@ -218,8 +212,7 @@ class CPU:
                 self.set_program_counter(instruction.dest)
 
             else:
-                for _ in instruction:
-                    self.increment_program_counter()
+                self.increment_program_counter(instruction)
 
         elif instruction == "cmp.b":
             instruction.src_type = str(self.read_vram(self.program_counter+1))
@@ -274,8 +267,7 @@ class CPU:
             self.flags.c = 0
 
             # Increment program counter
-            for _ in instruction:
-                self.increment_program_counter()
+            self.increment_program_counter(instruction)
 
         elif instruction == "add.b":
             instruction.src_type = str(self.read_vram(self.program_counter+1))
@@ -318,8 +310,7 @@ class CPU:
             self.flags.c = 0
 
             # Move program counter forward
-            for _ in instruction:
-                self.increment_program_counter()
+            self.increment_program_counter(instruction)
 
         elif instruction == "inc":
             instruction.dest_type = str(self.read_vram(self.program_counter+1))
@@ -343,8 +334,7 @@ class CPU:
             self.flags.e = int(origin == origin+1)
             self.flags.n = int(int(origin+1) < 0)
 
-            for _ in instruction:
-                self.increment_program_counter()
+            self.increment_program_counter(instruction)
 
         elif instruction == "sub.b":
             instruction.src_type = str(self.read_vram(self.program_counter+1))
@@ -386,8 +376,7 @@ class CPU:
             self.flags.c = 0
 
             # Move program counter forward
-            for _ in instruction:
-                self.increment_program_counter()
+            self.increment_program_counter(instruction)
 
         elif instruction == "dec":
             instruction.dest_type = str(self.read_vram(self.program_counter+1))
@@ -411,8 +400,7 @@ class CPU:
             self.flags.e = int(origin == origin-1)
             self.flags.n = int(int(origin+1) < 0)
 
-            for _ in instruction:
-                self.increment_program_counter()
+            self.increment_progrqam_counter(len(instruction))
 
         elif instruction == "mul.b":
             instruction.src_type = str(self.read_vram(self.program_counter+1))
@@ -454,8 +442,7 @@ class CPU:
             self.flags.c = 0
 
             # Move program counter forward
-            for _ in instruction:
-                self.increment_program_counter()
+            self.increment_program_counter(instruction)
 
         elif instruction == "div.b":
             instruction.src_type = str(self.read_vram(self.program_counter+1))
@@ -497,8 +484,7 @@ class CPU:
             self.flags.c = 0
 
             # Move program counter forward
-            for _ in instruction:
-                self.increment_program_counter()
+            self.increment_program_counter(instruction)
 
         else:
             exit(f"Runtime error: Unrecognised operand '{instruction.name}'")

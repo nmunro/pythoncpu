@@ -14,5 +14,8 @@ class InstructionJNZ(Instruction):
     def dest(self, label):
         self._dest = f"{label}".zfill(2)
 
+    def __len__(self):
+        return 2
+
     def __str__(self):
         return f"{self.code}{self.dest}"
