@@ -225,11 +225,9 @@ class CPU:
             if instruction.src.startswith(DATA_REGISTER_PREFIX):
                 if instruction.dest.startswith(DATA_REGISTER_PREFIX):
                     result = self.read_data_register(instruction.dest) - self.read_data_register(instruction.src)
-                    self.flags.e = int(self.read_data_register(instruction.dest) == self.read_data_register(instruction.src))
 
                 elif instruction.dest.startswith(ADDRESS_REGISTER_PREFIX):
                     result = self.read_address_register(instruction.dest[1:]) - self.read_data_register(instruction.src)
-                    self.flags.e = int(self.read_address_register(instruction.dest[1:]) == self.read_data_register(instruction.src))
 
                 else:
                     result = int(instruction.dest) - self.read_data_register(instruction.src)
@@ -238,11 +236,9 @@ class CPU:
             elif instruction.src.startswith(ADDRESS_REGISTER_PREFIX):
                 if instruction.dest.startswith(DATA_REGISTER_PREFIX):
                     result = self.read_data_register(instruction.dest) - self.read_address_register(instruction.src[1:])
-                    self.flags.e = int(self.read_data_register(instruction.dest) == self.read_data_register(instruction.src))
 
                 elif instruction.dest.startswith(ADDRESS_REGISTER_PREFIX):
                     result = self.read_address_register(instruction.dest[1:]) - self.read_address_register(instruction.src[1:])
-                    self.flags.e = int(self.read_data_register(instruction.dest) == self.read_data_register(instruction.src))
 
                 else:
                     result = int(instruction.dest) - self.read_address_register(instruction.src[1:])
@@ -251,16 +247,15 @@ class CPU:
             else:
                 if instruction.dest.startswith(DATA_REGISTER_PREFIX):
                     result = int(int(self.read_data_register(instruction.dest)) - int(instruction.src))
-                    self.flags.e = int(int(self.read_data_register(instruction.dest)) == int(instruction.src))
 
                 elif instruction.dest.startswith(ADDRESS_REGISTER_PREFIX):
                     pass
 
                 else:
                     result = int(instruction.dest) - int(instruction.src)
-                    self.flags.e = int(int(instruction.dest) == int(instruction.src))
 
             # set ccr flags
+            self.flags.e = int(self.read_data_register(instruction.dest) == self.read_data_register(instruction.src))
             self.flags.n = int(result < 0)
             self.flags.z = int(result == 0)
             self.flags.v = 0

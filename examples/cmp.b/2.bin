@@ -1,0 +1,4 @@
+start: move.b #$5,d0
+       move.b #$5,d1
+       cmp.b d0,d1
+       halt
