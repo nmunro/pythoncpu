@@ -192,7 +192,7 @@ def compile(input, output):
                 parsed_instruction == "jeq",
                 parsed_instruction == "jne",
             ]):
-            parsed_instruction.label = labels[args[0]]
+            parsed_instruction.dest = labels[args[0]]
             parsed_instruction.dest_type = str(Types.MEMORY).zfill(2)
             instructions.append(str(parsed_instruction))
 
